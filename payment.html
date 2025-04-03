@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="billingApp">
+
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Billing Information | Scent Vault</title>
+   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+   <link rel="stylesheet" href="style.css">
+   <script src="script.js"></script>
+   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body ng-controller="BillingController">
+   <div class="container">
+      <!--progress bar-->
+      <div class="progress-steps mt-4">
+         <div class="step completed">
+            <div class="step-number">1</div>
+            <div class="step-label">Cart</div>
+         </div>
+         <div class="step completed">
+            <div class="step-number">2</div>
+            <div class="step-label">Shipping</div>
+         </div>
+         <div class="step active">
+            <div class="step-number">3</div>
+            <div class="step-label">Payment</div>
+         </div>
+         <div class="step">
+            <div class="step-number">4</div>
+            <div class="step-label">Confirmation</div>
+         </div>
+      </div>
+
+      <div class="row gx-4">
+         <div class="col-lg-8">
+            <div class="billing-container">
+               <h2 class="mb-4">Billing Information</h2>
+
+               <!-- Billing Address -->
+               <div class="form-section">
+                  <h4>Billing Address</h4>
+                  <div class="form-check mb-3">
+                     <input class="form-check-input" type="checkbox" id="sameAsShipping" ng-model="sameAsShipping" ng-change="copyShippingAddress()">
+                     <label class="form-check-label" for="sameAsShipping">Same as shipping address</label>
+                  </div>
+                  <form id="billingForm">
+                     <div class="row mb-3">
+                        <div class="col-md-6">
+                           <label for="billingFirstName" class="form-label">First Name</label>
+                           <input type="text" class="form-control" id="billingFirstName" ng-model="billingAddress.firstName" required>
+                        </div>
+                        <div class="col-md-6">
+                           <label for="billingLastName" class="form-label">Last Name</label>
+                           <input type="text" class="form-control" id="billingLastName" ng-model="billingAddress.lastName" required>
+                        </div>
+                     </div>
+                     <div class="mb-3">
+                        <label for="billingAddress" class="form-label">Address</label>
+                        <input type="text" class="form-control" id="billingAddress" ng-model="billingAddress.address" required>
+                     </div>
+                     <div class="row mb-3">
+                        <div class="col-md-6">
+                           <label for="billingCity" class="form-label">City</label>
+                           <input type="text" class="form-control" id="billingCity" ng-model="billingAddress.city" required>
+                        </div>
+                        <div class="col-md-3">
+                           <label for="billingState" class="form-label">State</label>
+                           <select class="form-select" id="billingState" ng-model="billingAddress.state" required>
+                                        <option value="">Select</option>
+                                        <option value="AL">Alabama</option>
+                                        <<option value="AK">Alaska</option>
+                                       <option value="AZ">Arizona</option>
+                                       <option value="AR">Arkansas</option>
+                                       <option value="CA">California</option>
+                                       <option value="CO">Colorado</option>
+                                       <option value="CT">Connecticut</option>
+                                       <option value="DE">Delaware</option>
+                                       <option value="FL">Florida</option>
+                                       <option value="GA">Georgia</option>
+                                       <option value="HI">Hawaii</option>
+                                       <option value="ID">Idaho</option>
+                                       <option value="IL">Illinois</option>
+                                       <option value="IN">Indiana</option>
+                                       <option value="IA">Iowa</option>
+                                       <option value="KS">Kansas</option>
+                                       <option value="KY">Kentucky</option>
+                                       <option value="LA">Louisiana</option>
+                                       <option value="ME">Maine</option>
+                                       <option value="MD">Maryland</option>
+                                       <option value="MA">Massachusetts</option>
+                                       <option value="MI">Michigan</option>
+                                       <option value="MN">Minnesota</option>
+                                       <option value="MS">Mississippi</option>
+                                       <option value="MO">Missouri</option>
+                                       <option value="MT">Montana</option>
+                                       <option value="NE">Nebraska</option>
+                                       <option value="NV">Nevada</option>
+                                       <option value="NH">New Hampshire</option>
+                                       <option value="NJ">New Jersey</option>
+                                       <option value="NM">New Mexico</option>
+                                       <option value="NY">New York</option>
+                                       <option value="NC">North Carolina</option>
+                                       <option value="ND">North Dakota</option>
+                                       <option value="OH">Ohio</option>
+                                       <option value="OK">Oklahoma</option>
+                                       <option value="OR">Oregon</option>
+                                       <option value="PA">Pennsylvania</option>
+                                       <option value="RI">Rhode Island</option>
+                                       <option value="SC">South Carolina</option>
+                                       <option value="SD">South Dakota</option>
+                                       <option value="TN">Tennessee</option>
+                                       <option value="TX">Texas</option>
+                                       <option value="UT">Utah</option>
+                                       <option value="VT">Vermont</option>
+                                       <option value="VA">Virginia</option>
+                                       <option value="WA">Washington</option>
+                                       <option value="WV">West Virginia</option>
+                                       <option value="WI">Wisconsin</option>
+                                       <option value="WY">Wyoming</option>
+                                    </select>
+                        </div>
+                        <div class="col-md-3">
+                           <label for="billingZip" class="form-label">ZIP Code</label>
+                           <input type="text" class="form-control" id="billingZip" ng-model="billingAddress.zip" required>
+                        </div>
+                     </div>
+                  </form>
+               </div>
+
+               <!-- Payment Method -->
+               <div class="form-section">
+                  <h4>Payment Method</h4>
+                  <div class="payment-method" ng-click="selectPaymentMethod('credit')"
+                     ng-class="{'selected': payment.method === 'credit'}">
+                     <div class="form-check">
+                        <label class="form-check-label fw-bold">Credit/Debit Card</label>
+                        <div class="card-icons mt-2">
+                           <img src="https://1000logos.net/wp-content/uploads/2017/06/VISA-Logo-2006.png" alt="Visa">
+                           <img src="https://cdn.freebiesupply.com/logos/large/2x/mastercard-4-logo-png-transparent.png" alt="Mastercard">
+                           <img src="https://1000logos.net/wp-content/uploads/2016/10/American-Express-logo.png" alt="Amex">
+                        </div>
+                     </div>
+                  </div>
+               </div>
+
+               <!-- Credit Card Form (shown when credit card selected) -->
+               <div class="form-section" ng-show="payment.method === 'credit'">
+                  <h4>Card Details</h4>
+                  <div class="mb-3">
+                     <label for="cardNumber" class="form-label">Card Number</label>
+                     <input type="text" class="form-control" id="cardNumber" ng-model="payment.cardNumber" placeholder="1234 5678 9012 3456" required>
+                  </div>
+                  <div class="row mb-3">
+                     <div class="col-md-6">
+                        <label for="cardExpiry" class="form-label">Expiration Date</label>
+                        <input type="text" class="form-control" id="cardExpiry" ng-model="payment.cardExpiry" placeholder="MM/YY" required>
+                     </div>
+                     <div class="col-md-6">
+                        <label for="cardCvv" class="form-label">CVV</label>
+                        <input type="text" class="form-control" id="cardCvv" ng-model="payment.cardCvv" placeholder="123" required>
+                     </div>
+                  </div>
+                  <div class="form-check mb-3">
+                     <input class="form-check-input" type="checkbox" id="saveCard" ng-model="payment.saveCard">
+                     <label class="form-check-label" for="saveCard">Save this card for future purchases</label>
+                  </div>
+               </div>
+
+               <div class="d-flex justify-content-between mt-4">
+                  <a href="Shipping.html" class="btn btn-outline-secondary">Back to Shipping</a>
+                  <button class="btn btn-primary" ng-click="submitOrder()">Complete Order</button>
+               </div>
+            </div>
+         </div>
+
+         <div class="col-lg-4">
+            <div class="order-summary">
+               <h4>Order Summary</h4>
+               <div ng-repeat="item in cart">
+                  <div class="d-flex justify-content-between mb-2">
+                     <span>{{item.name}} × {{item.quantity || 1}}</span>
+                     <span>${{(item.price * (item.quantity || 1)).toFixed(2)}}</span>
+                  </div>
+               </div>
+               <hr>
+               <div class="d-flex justify-content-between mb-2">
+                  <span>Subtotal:</span>
+                  <span>${{calculateSubtotal().toFixed(2)}}</span>
+               </div>
+               <div class="d-flex justify-content-between mb-2">
+                  <span>Tax (6%):</span>
+                  <span>${{calculateTax().toFixed(2)}}</span>
+               </div>
+               <div class="d-flex justify-content-between mb-2">
+                  <span>Shipping:</span>
+                  <span>${{shippingCost.toFixed(2)}}</span>
+               </div>
+               <hr>
+               <div class="d-flex justify-content-between fw-bold">
+                  <span>Total:</span>
+                  <span>${{calculateTotal().toFixed(2)}}</span>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+
+   <script>
+      angular.module('billingApp', [])
+           .controller('BillingController', ['$scope', '$http', function($scope, $http) {
+               // Initialize data
+               $scope.cart = JSON.parse(localStorage.getItem('cart')) || [];
+               $scope.shippingData = JSON.parse(localStorage.getItem('shippingData')) || {};
+               $scope.shippingCost = $scope.shippingData.shipping || 0;
+               $scope.sameAsShipping = true;
+               $scope.payment = {
+                   method: 'credit',
+                   cardNumber: '',
+                   cardExpiry: '',
+                   cardCvv: '',
+                   saveCard: false
+               };
+               $scope.billingAddress = {};
+               
+               // Copy shipping address if same as shipping is checked
+               $scope.copyShippingAddress = function() {
+                   if ($scope.sameAsShipping && $scope.shippingData.address) {
+                       $scope.billingAddress = angular.copy($scope.shippingData.address);
+                   }
+               };
+               
+               // Initialize billing address
+               $scope.copyShippingAddress();
+               
+               // Payment method selection
+               $scope.selectPaymentMethod = function(method) {
+                   $scope.payment.method = method;
+               };
+               
+               // Calculate order values
+               $scope.calculateSubtotal = function() {
+                   return $scope.cart.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
+               };
+               
+               $scope.calculateTax = function() {
+                   return $scope.calculateSubtotal() * 0.06;
+               };
+               
+               $scope.calculateTotal = function() {
+                   return $scope.calculateSubtotal() + $scope.calculateTax() + $scope.shippingCost;
+               };
+               
+               // Submit order
+               $scope.submitOrder = function() {
+                  // Validate form
+                  if (!$scope.billingAddress.firstName || !$scope.billingAddress.lastName) {
+                     alert('Please fill out all required billing information');
+                     return;
+                  }
+                  
+                  if ($scope.payment.method === 'credit' && 
+                        (!$scope.payment.cardNumber || !$scope.payment.cardExpiry || !$scope.payment.cardCvv)) {
+                     alert('Please fill out all required card details');
+                     return;
+                  }   
+                   
+                  const orderData = {
+                  confirmation: 'SCV-' + Date.now().toString().slice(-8),
+                  date: new Date().toISOString(),
+                  shipping: $scope.shippingData,
+                  billing: {
+                  address: $scope.billingAddress,
+                  payment: {
+                  method: $scope.payment.method,
+                  // Save last 4 digits if credit card
+                  lastFour: $scope.payment.method === 'credit' ?
+                  $scope.payment.cardNumber.slice(-4) : null
+                  }
+                  },
+                  items: $scope.cart,
+                  subtotal: $scope.calculateSubtotal(),
+                  tax: $scope.calculateTax(),
+                  shippingCost: $scope.shippingCost,
+                  total: $scope.calculateTotal()
+                  };
+                  
+                  // Save all data to localStorage
+                  localStorage.setItem('currentOrder', JSON.stringify(orderData));
+                  localStorage.setItem('paymentData', JSON.stringify({
+                  method: $scope.payment.method,
+                  cardNumber: $scope.payment.cardNumber
+                  }));
+                   
+                   // Commented out API call until database is ready
+                   /*
+                   $http.post('/api/orders', orderData)
+                       .then(function(response) {
+                           localStorage.removeItem('cart');
+                           localStorage.removeItem('shippingData');
+                           window.location.href = 'confirmation.html?id=' + response.data.orderId;
+                       })
+                       .catch(function(error) {
+                           alert('Error submitting order. Please try again.');
+                           console.error(error);
+                       });
+                   */
+                   
+                   // Redirect to confirmation page with mock order ID
+                  localStorage.removeItem('cart');
+                  window.location.href = 'confirmation.html?id=' + orderData.confirmation;
+               };
+           }]);
+   </script>
+</body>
+
+</html>
