@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" ng-app="ShippingApp">
+<html lang="en">
 
 <head>
    <meta charset="UTF-8">
@@ -9,7 +9,7 @@
    <link rel="stylesheet" href="style.css">
 </head>
 
-<body ng-controller="ShippingController">
+<body>
    <div class="container">
       <!--progress bar-->
       <div class="progress-steps mt-4">
@@ -204,28 +204,25 @@
             <div class="cart-summary">
                <h4>Order Summary</h4>
                <div id="orderItems">
-                  <div class="cart-item" ng-repeat="item in cart">
-                     <span>{{item.name}} × {{item.quantity || 1}}</span>
-                     <span>${{(item.price * (item.quantity || 1)).toFixed(2)}}</span>
-                  </div>
+                  <!-- Cart items will be loaded here -->
                </div>
                <hr>
                <div class="d-flex justify-content-between mb-2">
                   <span>Subtotal:</span>
-                  <span>${{calculateSubtotal().toFixed(2)}}</span>
+                  <span id="subtotal">$0.00</span>
                </div>
                <div class="d-flex justify-content-between mb-2">
                   <span>Tax (6%):</span>
-                  <span>${{calculateTax().toFixed(2)}}</span>
+                  <span id="tax">$0.00</span>
                </div>
                <div class="d-flex justify-content-between mb-2">
                   <span>Shipping:</span>
-                  <span>${{shippingCost.toFixed(2)}}</span>
+                  <span id="shippingCost">$5.99</span>
                </div>
                <hr>
                <div class="d-flex justify-content-between fw-bold">
                   <span>Total:</span>
-                  <span>${{calculateTotal().toFixed(2)}}</span>
+                  <span id="orderTotal">$0.00</span>
                </div>
             </div>
          </div>
@@ -234,68 +231,131 @@
 
    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
    <script>
-      angular.module('ShippingApp', [])
-        .controller('ShippingController', ['$scope', '$http', function($scope, $http) {
-            $scope.cart = [];
-            $scope.shippingMethod = null;
-            $scope.shippingCost = 0;
-            
-            // Load cart
-            $scope.loadCart = function() {
-                $http.get('/api/cart')
-                    .then(function(response) {
-                        $scope.cart = response.data;
-                    });
-            };
-            
-            // Calculate subtotal
-            $scope.calculateSubtotal = function() {
-                return $scope.cart.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
-            };
-            
-            // Calculate tax
-            $scope.calculateTax = function() {
-                return $scope.calculateSubtotal() * 0.06;
-            };
-            
-            // Calculate total
-            $scope.calculateTotal = function() {
-                return $scope.calculateSubtotal() + $scope.calculateTax() + $scope.shippingCost;
-            };
-            
-            // Select shipping method
-            $scope.selectShippingMethod = function(method) {
-                $scope.shippingMethod = method;
-                if (method === 'standard') $scope.shippingCost = 5.99;
-                if (method === 'express') $scope.shippingCost = 12.99;
-                if (method === 'overnight') $scope.shippingCost = 24.99;
-            };
-            
-            // Proceed to payment
-            $scope.proceedToPayment = function() {
-                const shippingData = {
-                    address: {
-                        firstName: document.getElementById('firstName').value,
-                        lastName: document.getElementById('lastName').value,
-                        address: document.getElementById('address').value,
-                        city: document.getElementById('city').value,
-                        state: document.getElementById('state').value,
-                        zipCode: document.getElementById('zipCode').value,
-                        email: document.getElementById('email').value
-                    },
-                    method: $scope.shippingMethod,
-                    cost: $scope.shippingCost
-                };
+      // Track selections
+    let currentShippingMethod = null;
+    let currentShippingCarrier = null;
+    let cartSubtotal = 0;
+
+    function selectShippingMethod(method) {
+        // Remove highlight from all shipping method options
+        document.querySelectorAll('.shipping-option').forEach(option => {
+            if (option.closest('.form-section').querySelector('h3').textContent === 'Shipping Method') {
+                option.classList.remove('selected');
+            }
+        });
+
+        // Highlight selected option
+        event.currentTarget.classList.add('selected');
+        currentShippingMethod = method;
+
+        // Update shipping cost in summary
+        updateShippingCost();
+    }
+
+    function selectShippingCarrier(carrier) {
+        // Remove highlight from all carrier options
+        document.querySelectorAll('.shipping-option').forEach(option => {
+            if (option.closest('.form-section').querySelector('h3').textContent === 'Shipping Carrier') {
+                option.classList.remove('selected');
+            }
+        });
+
+        // Highlight selected option
+        event.currentTarget.classList.add('selected');
+        currentShippingCarrier = carrier;
+    }
+
+    function updateShippingCost() {
+        let shippingCost = 0;
+        if (currentShippingMethod === 'standard') shippingCost = 5.99;
+        if (currentShippingMethod === 'express') shippingCost = 12.99;
+        if (currentShippingMethod === 'overnight') shippingCost = 24.99;
+
+        document.getElementById('shippingCost').textContent = `$${shippingCost.toFixed(2)}`;
+        updateOrderTotal();
+    }
+
+    function calculateTax(subtotal) {
+        return subtotal * 0.06; // 6% tax
+    }
+
+    function updateOrderTotal() {
+        const subtotal = parseFloat(document.getElementById('subtotal').textContent.replace('$', ''));
+        const shipping = parseFloat(document.getElementById('shippingCost').textContent.replace('$', ''));
+        const tax = calculateTax(subtotal);
+        
+        document.getElementById('tax').textContent = `$${tax.toFixed(2)}`;
+        
+        const total = subtotal + tax + shipping;
+        document.getElementById('orderTotal').textContent = `$${total.toFixed(2)}`;
+    }
+
+    function proceedToPayment() {
+        const form = document.getElementById('shippingForm');
+        if (!form.checkValidity()) {
+            alert('Please fill out all required shipping information.');
+            return;
+        }
+        
+        
+        if (!currentShippingMethod || !currentShippingCarrier) {
+            alert('Please select both a shipping method and carrier');
+            return;
+        }
+
+        
+        // Collect shipping data
+        const shippingData = {
+            address: {
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                address: document.getElementById('address').value,
+                city: document.getElementById('city').value,
+                state: document.getElementById('state').value,
+                zipCode: document.getElementById('zipCode').value,
+                email: document.getElementById('email').value,
+                saveAddress: document.getElementById('saveAddress').checked
+            },
+            method: currentShippingMethod,
+            carrier: currentShippingCarrier,
+            subtotal: cartSubtotal,
+            tax: calculateTax(cartSubtotal),
+            shipping: parseFloat(document.getElementById('shippingCost').textContent.replace('$', '')),
+            total: parseFloat(document.getElementById('orderTotal').textContent.replace('$', ''))
+        };
+        
+        // Save to localStorage and proceed
+        localStorage.setItem('shippingData', JSON.stringify(shippingData));
+        window.location.href = 'payment.html';
+    }
+
+    // Load cart items on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const orderItems = document.getElementById('orderItems');
+        cartSubtotal = 0;
+        
+        if (cart.length === 0) {
+            orderItems.innerHTML = '<p>Your cart is empty.</p>';
+        } else {
+            orderItems.innerHTML = '';
+            cart.forEach(item => {
+                const quantity = item.quantity || 1;
+                const itemTotal = item.price * quantity;
+                cartSubtotal += itemTotal;
                 
-                $http.post('/api/shipping', shippingData)
-                    .then(function() {
-                        window.location.href = 'payment.html';
-                    });
-            };
-            
-            // Initialize
-            $scope.loadCart();
-        }]);
+                orderItems.innerHTML += `
+                    <div class="cart-item">
+                        <span>${item.name} × ${quantity}</span>
+                        <span>$${itemTotal.toFixed(2)}</span>
+                    </div>`;
+            });
+        }
+        
+        document.getElementById('subtotal').textContent = `$${cartSubtotal.toFixed(2)}`;
+        document.getElementById('tax').textContent = `$${calculateTax(cartSubtotal).toFixed(2)}`;
+        updateOrderTotal();
+    });
    </script>
 </body>
 

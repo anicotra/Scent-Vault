@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" ng-app=""CartApp>
+<html lang="en">
 
 <head>
    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
@@ -34,77 +34,173 @@
    </style>
 </head>
 
-<body ng-controller="CartController">
+<body>
    <div class="cart-container">
       <h2>Your Shopping Cart</h2>
       <div id="cartItems">
-         <p ng-if="cart.length === 0">Your cart is empty.</p>
-         <div class="cart-item" ng-repeat="item in cart track by $index">
-            <img ng-src="{{item.img}}" alt="{{item.name}}">
-            <span>{{item.name}} - ${{item.price.toFixed(2)}}</span>
-            <input type="number" min="1" ng-model="item.quantity" ng-change="updateQuantity($index, item.quantity)">
-            <button class="btn btn-sm btn-danger" ng-click="removeFromCart($index)">Remove</button>
-         </div>
+         <p>Loading cart...</p>
       </div>
-      <p class="cart-total mt-3"><strong>Total: ${{calculateTotal().toFixed(2)}}</strong></p>
+      <p class="cart-total mt-3"><strong>Total: $<span id="cartTotal">0.00</span></strong></p>
 
-      <button class="btn btn-danger w-100 mb-2" ng-click="clearCart()">Clear Cart</button>
+      <button class="btn btn-danger w-100 mb-2" onclick="clearCart()">Clear Cart</button>
       <a href="Shipping.html" class="btn btn-primary w-100 mb-2"> Submit Order</a>
       <a href="index.html" class="btn btn-secondary w-100">Back to Shop</a>
    </div>
 
+   <script>
+      const API_URL = "https://your-api-url.com/checkout"; 
+
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+      function updateCart() {
+         let cartContainer = document.getElementById("cartItems");
+         let total = 0;
+         cartContainer.innerHTML = "";
+
+         if (cart.length === 0) {
+            cartContainer.innerHTML = "<p>Your cart is empty.</p>";
+            document.getElementById("cartTotal").innerText = "0.00";
+            return;
+         }
+
+         cart.forEach((item, index) => {
+            const quantity = item.quantity || 1;
+            const itemTotal = item.price * quantity;
+            total += itemTotal;
+
+            cartContainer.innerHTML += `
+               <div class="cart-item">
+                  <img src="${item.img}" alt="${item.name}">
+                  <span>${item.name} - $${item.price.toFixed(2)}</span>
+                  <input type="number" min="1" value="${quantity}" onchange="updateQuantity(${index}, this.value)">
+                  <button class="btn btn-sm btn-danger" onclick="removeFromCart(${index})">Remove</button>
+               </div>`;
+         });
+
+         document.getElementById("cartTotal").innerText = total.toFixed(2);
+      }
+
+      function updateQuantity(index, quantity) {
+         if (quantity < 1) quantity = 1;
+         cart[index].quantity = parseInt(quantity);
+         localStorage.setItem("cart", JSON.stringify(cart));
+         updateCart();
+      }
+
+      function removeFromCart(index) {
+         cart.splice(index, 1);
+         localStorage.setItem("cart", JSON.stringify(cart));
+         updateCart();
+      }
+
+      function clearCart() {
+         localStorage.removeItem("cart");
+         cart = [];
+         updateCart();
+      }
+
+      function prepareCartPayload() {
+         const user = JSON.parse(localStorage.getItem("shoppers"))?.slice(-1)[0] || {
+            email: "guest@example.com",
+            name: "Guest",
+            age: 0,
+            phone: null,
+            address: "Unknown"
+         };
+
+         const totalPrice = cart.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0);
+
+         return {
+            user,
+            cartItems: cart.map(item => ({
+               name: item.name,
+               price: item.price,
+               quantity: item.quantity || 1,
+               image: item.img
+            })),
+            totalPrice
+         };
+      }
+
+      function submitOrder() {
+         const payload = prepareCartPayload();
+
+         $.ajax({
+            url: API_URL,
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify(payload),
+            success: function(response) {
+               alert("Order submitted successfully!");
+               localStorage.removeItem("cart");
+               cart = [];
+               updateCart();
+               console.log("Server Response:", response);
+            },
+            error: function(xhr, status, error) {
+               alert("Order submission failed. Try again later.");
+               console.error("Error:", xhr.responseText);
+            }
+         });
+      }
+
+      updateCart();
+   </script>
+
 
    <script>
-      angular.module('CartApp', [])
-        .controller('CartController', ['$scope', '$http', function($scope, $http) {
-            $scope.cart = [];
-            
-            // Load cart from backend
-            $scope.loadCart = function() {
-                $http.get('/api/cart')
-                    .then(function(response) {
-                        $scope.cart = response.data;
-                    })
-                    .catch(function(error) {
-                        console.error('Error loading cart:', error);
-                    });
-            };
-            
-            // Calculate total
-            $scope.calculateTotal = function() {
-                return $scope.cart.reduce((total, item) => {
-                    return total + (item.price * (item.quantity || 1));
-                }, 0);
-            };
-            
-            // Update quantity
-            $scope.updateQuantity = function(index, quantity) {
-                if (quantity < 1) quantity = 1;
-                $http.put('/api/cart/' + $scope.cart[index].id, { quantity: quantity })
-                    .then(function() {
-                        $scope.loadCart();
-                    });
-            };
-            
-            // Remove from cart
-            $scope.removeFromCart = function(index) {
-                $http.delete('/api/cart/' + $scope.cart[index].id)
-                    .then(function() {
-                        $scope.loadCart();
-                    });
-            };
-            
-            // Clear cart
-            $scope.clearCart = function() {
-                $http.delete('/api/cart')
-                    .then(function() {
-                        $scope.cart = [];
-                    });
-            };
-            
-            // Initialize
-            $scope.loadCart();
-        }]);
+      const app = angular.module("StoreApp", []);
+
+   app.controller("CartController", function ($scope, $http) {
+      $scope.cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+      $scope.user = JSON.parse(localStorage.getItem("shoppers"))?.slice(-1)[0] || {
+         email: "guest@example.com",
+         name: "Guest",
+         age: 0,
+         phone: null,
+         address: "Unknown"
+      };
+
+      $scope.getTotal = function () {
+         return $scope.cart.reduce((total, item) => {
+            return total + (item.price * (item.quantity || 1));
+         }, 0).toFixed(2);
+      };
+
+      $scope.removeItem = function (index) {
+         $scope.cart.splice(index, 1);
+         localStorage.setItem("cart", JSON.stringify($scope.cart));
+      };
+
+      $scope.clearCart = function () {
+         $scope.cart = [];
+         localStorage.removeItem("cart");
+      };
+
+      $scope.submitOrder = function () {
+         const payload = {
+            user: $scope.user,
+            cartItems: $scope.cart.map(item => ({
+               name: item.name,
+               price: item.price,
+               quantity: item.quantity || 1,
+               image: item.img
+            })),
+            totalPrice: $scope.getTotal()
+         };
+
+         $http.post("https://your-api-url.com/checkout", payload)
+            .then(res => {
+               alert("Order submitted!");
+               $scope.clearCart();
+            })
+            .catch(err => {
+               console.error("Error:", err);
+               alert("Submission failed.");
+            });
+      };
+   });
    </script>
 </body>
 

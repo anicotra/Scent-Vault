@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" ng-app="ConfirmationApp">
+<html lang="en">
 
 <head>
    <meta charset="UTF-8">
@@ -41,7 +41,7 @@
    </style>
 </head>
 
-<body ng-controller="ConfirmationController">
+<body>
    <div class="container py-5">
       <!-- Progress Bar -->
       <div class="progress-steps mt-4">
@@ -126,22 +126,77 @@
       
       <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
       <script>
-         angular.module('ConfirmationApp', [])
-        .controller('ConfirmationController', ['$scope', '$http', '$routeParams', function($scope, $http, $routeParams) {
-            $scope.order = {};
-            
-            // Load order data
-            $scope.loadOrder = function() {
-                $http.get('/api/orders/' + $routeParams.id)
-                    .then(function(response) {
-                        $scope.order = response.data;
-                    });
-            };
-            
-            // Initialize
-            $scope.loadOrder();
-        }]);
-   </script>
+         document.addEventListener('DOMContentLoaded', function() {
+         // Get order data from localStorage
+         const order = JSON.parse(localStorage.getItem('currentOrder')) || {};
+         const paymentData = JSON.parse(localStorage.getItem('paymentData')) || {};
+         
+         // Display confirmation number
+         document.getElementById('confirmationNumber').textContent =
+         order.confirmation || 'SCV-' + Date.now().toString().slice(-8);
+         
+         // Display date
+         document.getElementById('orderDate').textContent =
+         order.date ? new Date(order.date).toLocaleString() : new Date().toLocaleString();
+         
+         // Display shipping info
+         if (order.shipping && order.shipping.address) {
+         const addr = order.shipping.address;
+         document.getElementById('shippingAddress').innerHTML = `
+         ${addr.firstName} ${addr.lastName}<br>
+                 ${addr.address}<br>
+                 ${addr.city}, ${addr.state} ${addr.zip}
+               `;
+               document.getElementById('shippingMethod').textContent =
+                 order.shipping.method || 'Standard';
+               document.getElementById('shippingCost').textContent =
+                 order.shippingCost ? order.shippingCost.toFixed(2) : '5.99';
+             }
+         
+             // Display payment info - NOW WITH CARD DETAILS
+             const paymentMethod = order.billing?.payment?.method || paymentData.method || 'credit';
+             document.getElementById('paymentMethod').textContent =
+               paymentMethod === 'credit' ? 'Credit/Debit Card';
+         
+             const lastFour = order.billing?.payment?.lastFour ||
+                            (paymentData.cardNumber ? paymentData.cardNumber.slice(-4) : null);
+             document.getElementById('cardLastFour').textContent =
+               lastFour ? '•••• ' + lastFour : 'Not available';
+         
+             // Display order items
+             const orderItems = document.getElementById('orderItems');
+             if (order.items && order.items.length > 0) {
+               order.items.forEach(item => {
+                 const itemDiv = document.createElement('div');
+                 itemDiv.className = 'order-item';
+                 itemDiv.innerHTML = `
+         <div>
+            <h6>${item.name}</h6>
+            <div>Qty: ${item.quantity || 1} × $${item.price.toFixed(2)}</div>
+         </div>
+         `;
+         orderItems.appendChild(itemDiv);
+         });
+         }
+         
+         // Display totals
+         if (order.subtotal) {
+         document.getElementById('subtotal').textContent = '$' + order.subtotal.toFixed(2);
+         document.getElementById('tax').textContent = '$' + (order.tax || 0).toFixed(2);
+         document.getElementById('shipping').textContent = '$' + (order.shippingCost || 0).toFixed(2);
+         document.getElementById('total').textContent = '$' + order.total.toFixed(2);
+         }
+         });
+
+      
+            /*
+            // AngularJS implementation (commented out until database is ready)
+            angular.module('confirmationApp', [])
+               .controller('ConfirmationController', ['$scope', '$http', function($scope, $http) {
+                  // This will be used when database is implemented
+                  // Will replace the jQuery implementation above
+               }]);
+            */
       </script>
       </body>
       
