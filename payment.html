@@ -209,110 +209,70 @@
    </div>
 
    <script>
-      angular.module('billingApp', [])
-           .controller('BillingController', ['$scope', '$http', function($scope, $http) {
-               // Initialize data
-               $scope.cart = JSON.parse(localStorage.getItem('cart')) || [];
-               $scope.shippingData = JSON.parse(localStorage.getItem('shippingData')) || {};
-               $scope.shippingCost = $scope.shippingData.shipping || 0;
-               $scope.sameAsShipping = true;
-               $scope.payment = {
-                   method: 'credit',
-                   cardNumber: '',
-                   cardExpiry: '',
-                   cardCvv: '',
-                   saveCard: false
-               };
-               $scope.billingAddress = {};
-               
-               // Copy shipping address if same as shipping is checked
-               $scope.copyShippingAddress = function() {
-                   if ($scope.sameAsShipping && $scope.shippingData.address) {
-                       $scope.billingAddress = angular.copy($scope.shippingData.address);
-                   }
-               };
-               
-               // Initialize billing address
-               $scope.copyShippingAddress();
-               
-               // Payment method selection
-               $scope.selectPaymentMethod = function(method) {
-                   $scope.payment.method = method;
-               };
-               
-               // Calculate order values
-               $scope.calculateSubtotal = function() {
-                   return $scope.cart.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
-               };
-               
-               $scope.calculateTax = function() {
-                   return $scope.calculateSubtotal() * 0.06;
-               };
-               
-               $scope.calculateTotal = function() {
-                   return $scope.calculateSubtotal() + $scope.calculateTax() + $scope.shippingCost;
-               };
-               
-               // Submit order
-               $scope.submitOrder = function() {
-                  // Validate form
-                  if (!$scope.billingAddress.firstName || !$scope.billingAddress.lastName) {
-                     alert('Please fill out all required billing information');
-                     return;
-                  }
-                  
-                  if ($scope.payment.method === 'credit' && 
-                        (!$scope.payment.cardNumber || !$scope.payment.cardExpiry || !$scope.payment.cardCvv)) {
-                     alert('Please fill out all required card details');
-                     return;
-                  }   
-                   
-                  const orderData = {
-                  confirmation: 'SCV-' + Date.now().toString().slice(-8),
-                  date: new Date().toISOString(),
-                  shipping: $scope.shippingData,
-                  billing: {
-                  address: $scope.billingAddress,
-                  payment: {
-                  method: $scope.payment.method,
-                  // Save last 4 digits if credit card
-                  lastFour: $scope.payment.method === 'credit' ?
-                  $scope.payment.cardNumber.slice(-4) : null
-                  }
-                  },
-                  items: $scope.cart,
-                  subtotal: $scope.calculateSubtotal(),
-                  tax: $scope.calculateTax(),
-                  shippingCost: $scope.shippingCost,
-                  total: $scope.calculateTotal()
-                  };
-                  
-                  // Save all data to localStorage
-                  localStorage.setItem('currentOrder', JSON.stringify(orderData));
-                  localStorage.setItem('paymentData', JSON.stringify({
-                  method: $scope.payment.method,
-                  cardNumber: $scope.payment.cardNumber
-                  }));
-                   
-                   // Commented out API call until database is ready
-                   /*
-                   $http.post('/api/orders', orderData)
-                       .then(function(response) {
-                           localStorage.removeItem('cart');
-                           localStorage.removeItem('shippingData');
-                           window.location.href = 'confirmation.html?id=' + response.data.orderId;
-                       })
-                       .catch(function(error) {
-                           alert('Error submitting order. Please try again.');
-                           console.error(error);
-                       });
-                   */
-                   
-                   // Redirect to confirmation page with mock order ID
-                  localStorage.removeItem('cart');
-                  window.location.href = 'confirmation.html?id=' + orderData.confirmation;
-               };
-           }]);
+      angular.module('PaymentApp', [])
+        .controller('PaymentController', ['$scope', '$http', function($scope, $http) {
+            $scope.cart = [];
+            $scope.shippingData = {};
+            $scope.billingAddress = {};
+            $scope.payment = {
+                method: 'credit',
+                cardNumber: '',
+                cardExpiry: '',
+                cardCvv: '',
+                saveCard: false
+            };
+            
+            // Load data
+            $scope.loadData = function() {
+                $http.get('/api/cart')
+                    .then(function(response) {
+                        $scope.cart = response.data;
+                    });
+                
+                $http.get('/api/shipping')
+                    .then(function(response) {
+                        $scope.shippingData = response.data;
+                        $scope.billingAddress = angular.copy($scope.shippingData.address);
+                    });
+            };
+            
+            // Calculate order values
+            $scope.calculateSubtotal = function() {
+                return $scope.cart.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
+            };
+            
+            $scope.calculateTax = function() {
+                return $scope.calculateSubtotal() * 0.06;
+            };
+            
+            $scope.calculateTotal = function() {
+                return $scope.calculateSubtotal() + $scope.calculateTax() + $scope.shippingData.cost;
+            };
+            
+            // Submit order
+            $scope.submitOrder = function() {
+                const orderData = {
+                    shipping: $scope.shippingData,
+                    billing: {
+                        address: $scope.billingAddress,
+                        payment: $scope.payment
+                    },
+                    items: $scope.cart,
+                    subtotal: $scope.calculateSubtotal(),
+                    tax: $scope.calculateTax(),
+                    shippingCost: $scope.shippingData.cost,
+                    total: $scope.calculateTotal()
+                };
+                
+                $http.post('/api/orders', orderData)
+                    .then(function(response) {
+                        window.location.href = 'confirmation.html?id=' + response.data.orderId;
+                    });
+            };
+            
+            // Initialize
+            $scope.loadData();
+        }]);
    </script>
 </body>
 

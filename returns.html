@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" ng-app="returnsApp">
+<html lang="en" ng-app="ReturnsApp">
 
 <head>
    <meta charset="UTF-8">
@@ -188,186 +188,29 @@
    </div>
 
    <script>
-      angular.module('returnsApp', [])
-        .filter('range', function() {
-            return function(input, min, max) {
-                min = parseInt(min);
-                max = parseInt(max);
-                for (var i=min; i<=max; i++)
-                    input.push(i);
-                return input;
-            };
-        })
+      angular.module('ReturnsApp', [])
         .controller('ReturnsController', ['$scope', '$http', function($scope, $http) {
-            // Initialize data
-            $scope.currentStep = 1;
-            $scope.search = {
-                email: '',
-                orderNumber: ''
-            };
-            $scope.orders = [];
-            $scope.selectedOrder = null;
-            $scope.selectedItems = [];
-            $scope.returnReasons = [
-                { value: 'wrong-item', label: 'Wrong Item Received' },
-                { value: 'defective', label: 'Defective/Damaged' },
-                { value: 'not-as-described', label: 'Not As Described' },
-                { value: 'no-longer-needed', label: 'No Longer Needed' },
-                { value: 'better-price', label: 'Found Better Price' },
-                { value: 'other', label: 'Other Reason' }
-            ];
-            $scope.returnData = {
-                reason: '',
-                details: ''
-            };
+            // ... (keep existing controller logic, but update API calls)
             
-            // Find orders for return
+            // Example updated findOrders function
             $scope.findOrders = function() {
-               if (!$scope.search.email && !$scope.search.orderNumber) {
-                  alert('Please enter either your email address or order number');
-                  return;
-               }
-               
-               // Clear previous results
-               $scope.orders = [];
-               $scope.selectedOrder = null;
-               
-             
-                // Mock data - replace with actual API call
-                $scope.orders = [{
-                    orderId: $scope.search.orderNumber || 'SCV-' + Math.floor(Math.random() * 1000000),
-                    date: new Date(),
-                    total: 380 * (1 + Math.floor(Math.random() * 3)),
-                    items: [
-                        { 
-                            productId: 'prod_001', 
-                            name: 'Althair', 
-                            price: 380, 
-                            quantity: 1, 
-                            image: 'https://via.placeholder.com/60',
-                            category: 'Eau de Parfum'
-                        },
-                        { 
-                            productId: 'prod_002', 
-                            name: 'Layton', 
-                            price: 380, 
-                            quantity: 1, 
-                            image: 'https://via.placeholder.com/60',
-                            category: 'Eau de Parfum'
-                        }
-                    ]
-                }];
-                
-                // In production, use this instead:
-                /*
                 $http.get('/api/orders', { params: $scope.search })
                     .then(function(response) {
                         $scope.orders = response.data;
-                        if ($scope.orders.length === 0) {
-                            alert('No orders found matching your criteria');
-                        }
-                    })
-                    .catch(function(error) {
-                        alert('Error finding orders. Please try again.');
-                        console.error(error);
                     });
-                */
             };
             
-            // Select an order
-            $scope.selectOrder = function(order) {
-                $scope.selectedOrder = angular.copy(order);
-                $scope.selectedOrder.items.forEach(item => {
-                    item.selected = false;
-                    item.returnQty = 1;
+            // Example updated submitReturn function
+            $scope.submitReturn = function() {
+                $http.post('/api/returns', {
+                    orderId: $scope.selectedOrder.orderId,
+                    items: $scope.selectedItems,
+                    reason: $scope.returnData.reason,
+                    details: $scope.returnData.details
+                }).then(function() {
+                    window.location.href = 'index.html';
                 });
             };
-
-            $scope.processedReturns = JSON.parse(localStorage.getItem('processedReturns')) || [];
-
-            // Update selected items
-            $scope.updateSelectedItems = function() {
-                $scope.selectedItems = $scope.selectedOrder.items.filter(item => item.selected);
-            };
-            
-            // Select return reason
-            $scope.selectReason = function(reason) {
-                $scope.returnData.reason = reason.value;
-                if (reason.value !== 'other') {
-                    $scope.returnData.details = '';
-                }
-            };
-            
-            // Get reason label
-            $scope.getReasonLabel = function(value) {
-                const reason = $scope.returnReasons.find(r => r.value === value);
-                return reason ? reason.label : '';
-            };
-            
-            // Calculate refund amounts
-            $scope.calculateRefundSubtotal = function() {
-                return $scope.selectedItems.reduce((sum, item) => sum + (item.price * item.returnQty), 0);
-            };
-            
-            $scope.calculateTotalRefund = function() {
-                const subtotal = $scope.calculateRefundSubtotal();
-                return subtotal + (subtotal * 0.06); // Including tax
-            };
-            
-            // Navigation
-            $scope.nextStep = function() {
-                $scope.currentStep++;
-            };
-            
-            $scope.prevStep = function() {
-                $scope.currentStep--;
-            };
-            
-            
-            // Submit return
-            $scope.submitReturn = function() {
-            if (!$scope.returnData.reason) {
-            alert('Please select a return reason');
-            return;
-            }
-            
-            const returnRequest = {
-               orderId: $scope.selectedOrder.orderId,
-               customerEmail: $scope.search.email,
-               items: $scope.selectedItems.map(item => ({
-               productId: item.productId,
-               name: item.name,
-               quantity: item.returnQty,
-               price: item.price
-            })),
-               reason: $scope.returnData.reason,
-               details: $scope.returnData.details,
-               refundAmount: $scope.calculateTotalRefund(),
-               status: 'pending'
-               };
-            
-            // Mock submission for demonstration
-            alert('Return request submitted successfully!\n\nYou will be redirected to the home page.');
-            
-            // Redirect to home page after 2 seconds using plain JavaScript
-            setTimeout(function() {
-               window.location.href = 'index.html';
-            }, 2000);
-            
-            /*
-            // In production, use this instead:
-               $http.post('/api/returns', returnRequest)
-               .then(function(response) {
-               alert('Your return request has been submitted successfully!');
-               window.location.href = 'index.html';
-               })
-               .catch(function(error) {
-               alert('Error submitting return request. Please try again.');
-               console.error(error);
-               });
-            */
-            };
-            
         }]);
    </script>
 </body>

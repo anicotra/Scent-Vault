@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" ng-app="StoreApp">
 
 <head>
    <meta charset="UTF-8">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <title>Web Storefront</title>
    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
    <link rel="stylesheet" href="style.css">
    <style>
@@ -28,7 +29,7 @@
    </style>
 </head>
 
-<body>
+<body ng-controller="ProductController">
 
    <!--menu-->
    <div class="d-flex">
@@ -52,16 +53,25 @@
       <!--Products -->
       <div class="content p-4 w-100 text-center">
          <h1>Welcome to Scent Vault</h1>
-         <input type="text" id="searchBar" class="form-control" placeholder="Search products..." onkeyup="searchProducts()" style="position: absolute; top: 20px; right: 20px; width: 250px; max-width: 100%;">
+         <input type="text" id="searchBar" class="form-control" placeholder="Search products..." ng-model="searchQuery" ng-change="searchProducts()" style="position: absolute; top: 20px; right: 20px; width: 250px; max-width: 100%;">
          <h2>Our Products:</h2>
          <div class="container">
             <div id="productGrid" class="row row-cols-3 g-4">
-               <!-- Products will be inserted here by JavaScript -->
+               <div class="col" ng-repeat="product in filteredProducts">
+                 <div class="product-box p-3 bg-light border rounded text-center" ng-class="{'highlight': product.highlight}">
+                   <img ng-src="{{product.image}}" alt="{{product.name}}" class="product-img">
+                   <h3 class="mt-2">{{product.name}}</h3>
+                   <p ng-if="product.desc"><strong>Type:</strong> {{product.desc}}</p>
+                   <p><strong>Notes:</strong> {{product.category}}</p>
+                   <p><strong>Size:</strong> {{product.unit}}</p>
+                   <p><strong>Price:</strong> ${{product.price}}</p>
+                   <button class="btn btn-primary add-to-cart" ng-click="addToCart(product)">Add to Cart</button>
+                 </div>
+               </div>
             </div>
          </div>
       </div>
-
-      <!-- end products-->
+   </div>
 
 
       <div class="overlay" id="overlay" onclick="closeForms()"></div>
@@ -116,241 +126,71 @@
    </div>
 
    <script>
-      //products on main page
-
-           const APP_VERSION = "1.0";
-           const defaultProducts = [
-         {
-         name: "Althair", desc: "Eau de Parfum", category: "Amber, Vanilla, Woody", unit: "125ml", price: "380", image:
-         "https://us.parfums-de-marly.com/cdn/shop/files/ALTHAIR_75ml_2.png?v=1728479159&width=1000"
-         },
-         {
-         name: "Layton", desc: "Eau de Parfum", category: "Amber, Fougere", unit: "125ml", price: "380", image:
-         "https://us.parfums-de-marly.com/cdn/shop/files/LAYTON_EXCLUSIF_75ml_2.png?v=1728481029&width=1000"
-         },
-         {
-         name: "Haltane", desc: "Eau de Parfum", category: "Woody, Aromatic", unit: "125ml", price: "440", image:
-         "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwHKUojhrVtlhIjkXDgbE2GGTCqKnImPW4RA&s"
-         },
-         {
-         name: "Layton Exclusif", desc: "Parfum", category: "Oud", unit: "125ml", price: "440", image:
-         "https://us.parfums-de-marly.com/cdn/shop/files/LAYTON_EXCLUSIF_75ml_2.png?v=1728481029&width=1000"
-         },
-         {
-         name: "Herod", desc: "Eau de Parfum", category: "Amber, Vanilla, Tobacco", unit: "125ml", price: "380", image:
-         "https://media.neimanmarcus.com/f_auto,q_auto:low,ar_4:5,c_fill,dpr_2.0,w_790/01/nm_4116994_100000_a"
-         },
-         {
-         name: "Percival", desc: "Eau de Parfum", category: "Aromatic, Citrus, Woody", unit: "125ml", price: "380", image:
-         "https://parfums-de-marly.com/cdn/shop/files/PERCIVAL_75ml_2.png?v=1728466360&width=1000"
-         },
-         {
-         name: "Pegasus", desc: "Eau de Parfum", category: "Amber, Woody", unit: "125ml", price: "380", image:
-         "https://us.parfums-de-marly.com/cdn/shop/files/PEGASUS_75ml_1.png?v=1728481486&width=1000"
-         },
-         {
-         name: "Greenley", desc: "Eau de Parfum", category: "Citrus, Fruity, Woody", unit: "125ml", price: "270", image:
-         "https://us.parfums-de-marly.com/cdn/shop/files/GREENLEY_75ml_2.png?v=1728480199&width=1000"
-         },
-         {
-         name: "Perseus", desc: "Eau de Parfum", category: "Citrus, Woody", unit: "125ml", price: "380", image:
-         "https://us.parfums-de-marly.com/cdn/shop/files/PERSEUS_75ml_2.png?v=1729053598&width=1000"
-         },
-         {
-         name: "Carlisle", desc: "Eau de Parfum", category: "Amber, Woody", unit: "125ml", price: "440", image:
-         "https://parfums-de-marly.com/cdn/shop/files/CARLISLE_125ml_1.png?v=1728460993"
-         },
-         
-         {
-         name: "Y le Parfum", category: "Grapefruit, Apple, Ginger", unit: "100ml", price: "185", image:
-         "https://cdn11.bigcommerce.com/s-36d93/products/12313/images/12712/8021751271406862593-101460__92658.1674508581.380.500.jpg?c=2"
-         },
-         {
-         name: "MYSELF Le Parfum", category: "Black Pepper, Orange, Vanilla", unit: "100ml", price: "185", image:
-         "https://www.yslbeautyus.com/dw/image/v2/AANG_PRD/on/demandware.static/-/Sites-ysl-master-catalog/default/dw905a8ad5/images/Myslf%20Le%20Parfum/100ML/3614274114645_alt1.jpg?sw=320&sh=320&sm=cut&sfrm=jpg&q=85"
-         },
-         {
-         name: "Y Elixer", category: "Lavender, Geranium, Vanilla", unit: "60ml", price: "190", image:
-         "https://www.aurafragrance.com/cdn/shop/files/Yves-Saint-Laurent-Men-s-Y-Elixir-Parfum-Parfum-2-0-oz-Fragrances-3614274025637_f306fba0-f606-40ce-8d21-ebeccc82021f-c78f114aab91ce4c7f34b014382cec41_grande.jpg?v=1734139513"
-         },
-         {
-         name: "MYSELF Eau De Parfum", category: "Bergamot, Orange", unit: "150ml", price: "175", image:
-         "https://www.yslbeautyus.com/dw/image/v2/AANG_PRD/on/demandware.static/-/Sites-ysl-master-catalog/default/dw491ebc56/images/MYSLF%20EDP/3614273852814.jpg"
-         },
-         {
-         name: "Y Eau De Parfum", desc: "Eau de Parfum", category: "Bergamot, Ginger, Apple", unit: "100ml", price: "155",
-         image: "https://m.media-amazon.com/images/I/81grEN5hQcL.jpg"
-         },
-         {
-         name: "Y Eau De Toilette", desc: "Eau de Toilette", category: "Bergamot, Ginger", unit: "100ml", price: "130", image:
-         "https://m.media-amazon.com/images/I/61kG4TcJQJL.jpg"
-         },
-         
-         {
-         name: "Le Male Elixer Absolu", desc: "Parfum", category: "Plum, Lavender", unit: "125ml", price: "175", image:
-         "https://i.ebayimg.com/images/g/cGEAAOSw2HNnoMAg/s-l1200.png"
-         },
-         {
-         name: "Le Beau Paradise Garden", desc: "Eau de Parfum", category: "Watery, Mint, Ginger", unit: "125ml", price: "146",
-         image:
-         "https://cdn2.jomashop.com/media/catalog/product/j/e/jean-paul-gaultier-mens-le-beau-paradise-garden-edp-42-oz-fragrances-8435415091275.jpg"
-         },
-         {
-         name: "Le Beau", desc: "Eau de Toilette", category: "Bergamot, Coconut", unit: "125ml", price: "130", image:
-         "https://fragrancemarket.com/cdn/shop/files/Jean-Paul-Gaultier-Le-Beau-Male-EDP.jpg?v=1711468371"
-         },
-         {
-         name: "Le Beau le Parfum", desc: "Eau de Parfum Intense", category: "Pineapple, Ginger, Coconut", unit: "125ml", price:
-         "153", image: "https://m.media-amazon.com/images/I/51FZP233GBL.jpg"
-         },
-         {
-         name: "Le Male Elixer", desc: "Parfum", category: "Lavender, Mint, Vanilla", unit: "125ml", price: "160", image:
-         "https://m.media-amazon.com/images/I/51M3ig2cbHL.jpg"
-         },
-         {
-         name: "Le Male", desc: "Eau de Toilette", category: "Lavender, Mint, Cardamom", unit: "125ml", price: "124", image:
-         "https://m.media-amazon.com/images/I/51YnYgtasTL.jpg"
-         },
-         {
-         name: "La Male Le Parfum", desc: "Eau de Parfum Intense", category: "Cardamom, Lavender, Vanilla", unit: "125ml",
-         price: "146", image: "https://www.fragranceoutlet.com/cdn/shop/files/lemale.webp?v=1711471221"
-         }
-         ];
-
-        
-       
-           // Shopping cart functions
-           function addToCart(productName, price, imgSrc) {
-             let cart = JSON.parse(localStorage.getItem("cart")) || [];
-             cart.push({ name: productName, price: parseFloat(price), img: imgSrc });
-             localStorage.setItem("cart", JSON.stringify(cart));
-             alert("Product added to cart!");
-           }
-         
-           // Product rendering function
-           function renderProducts(products) {
-             const productGrid = document.getElementById("productGrid");
-             if (!productGrid) {
-               console.error("Could not find product grid element");
-               return;
-             }
-
-             productGrid.innerHTML = ""; // Clear existing content
-             
-             products.forEach(product => {
-               const productDiv = document.createElement("div");
-               productDiv.className = "col";
-               
-               productDiv.innerHTML = `
-                 <div class="product-box p-3 bg-light border rounded text-center">
-                   <img src="${product.image}" alt="${product.name}" class="product-img">
-                   <h3 class="mt-2">${product.name}</h3>${product.desc ? `
-                   <p><strong>Type:</strong> ${product.desc}</p>` : ''}
-                   <p><strong>Notes:</strong> ${product.category}</p>
-                   <p><strong>Size:</strong> ${product.unit}</p>
-                   <p><strong>Price:</strong> $${product.price}</p>
-                   <button class="btn btn-primary add-to-cart" onclick="addToCart('${product.name.replace(/'/g, "\\'")}', ${product.price}, '${product.image}')">Add to Cart</button>
-                 </div>
-               `;
-               
-               productGrid.appendChild(productDiv);
-             });
-           }
-         
-           // When DOM loads
-           document.addEventListener("DOMContentLoaded", function() {
-             console.log("DOM loaded - initializing products");
-             
-             // Try to load from localStorage
-             let storedProducts = JSON.parse(localStorage.getItem("products"));
-             console.log("Loaded from localStorage:", storedProducts);
-             
-             // If nothing in storage, use defaults
-             if (!storedProducts || storedProducts.length === 0) {
-               console.log("Using default products");
-               localStorage.setItem("products", JSON.stringify(defaultProducts));
-               storedProducts = defaultProducts;
-             }
-             
-             // Render the products
-             console.log("Rendering products:", storedProducts.length);
-             renderProducts(storedProducts);
-           });
-         
-      
-         //shopping cart
-         function searchProducts() {
-         let query = document.getElementById("searchBar").value.toLowerCase().trim();
-         let products = document.querySelectorAll(".product-box");
-         products.forEach(product => {
-         let productName = product.querySelector("h3").textContent.toLowerCase();
-         product.style.display = productName.includes(query) ? "block" : "none";
-         });
-         }
-         
-         //search bar
-         let searchTimeout;
-         
-         function searchProducts() {
-         clearTimeout(searchTimeout);
-         searchTimeout = setTimeout(() => {
-         const query = document.getElementById("searchBar").value.toLowerCase().trim();
-         if (query.length < 2) return; products=document.querySelectorAll(".product-box"); let found=false;
-            products.forEach(product=> {
-            product.classList.remove("highlight");
-            const productName = product.querySelector("h3").textContent.toLowerCase();
-            if (productName.includes(query)) {
-            product.scrollIntoView({ behavior: "smooth", block: "center" });
-            product.classList.add("highlight");
-            found = true;
-            }
-            });
-         
-            if (!found) {
-            alert("Product not found!");
-            }
-            }, 500); 
-            }
-         
-            //forms
-            function openSignup() {
-            document.getElementById('signupPopup').style.display = 'block';
-            document.getElementById('overlay').style.display = 'block';
-            }
-            function closeSignup() {
-            document.getElementById('signupPopup').style.display = 'none';
-            document.getElementById('overlay').style.display = 'none';
-            }
-            function showThankYou(event) {
-            event.preventDefault();
-            closeSignup();
-            document.getElementById('thankYouPopup').style.display = 'block';
-            document.getElementById('overlay').style.display = 'block';
-            }
-            function closeThankYou() {
-            document.getElementById('thankYouPopup').style.display = 'none';
-            document.getElementById('overlay').style.display = 'none';
-            }
-            function openPasswordPrompt() {
-            document.getElementById('passwordPopup').style.display = 'block';
-            document.getElementById('overlay').style.display = 'block';
-            }
-            function closePasswordPrompt() {
-            document.getElementById('passwordPopup').style.display = 'none';
-            document.getElementById('overlay').style.display = 'none';
-            }
-            function checkPassword() {
-            const passwordInput = document.getElementById('passwordInput').value;
-            const passwordError = document.getElementById('passwordError');
+angular.module('StoreApp', [])
+        .controller('ProductController', ['$scope', '$http', function($scope, $http) {
+            $scope.products = [];
+            $scope.filteredProducts = [];
+            $scope.searchQuery = '';
             
-            // Replace 'Admin123' with your desired password
-            if (passwordInput === 'Admin') {
-            window.location.href = 'ProductManagement.html';
-            } else {
-            passwordError.style.display = 'block';
-            }
-            }
-             
+            // Load products from backend
+            $scope.loadProducts = function() {
+                $http.get('/api/products')
+                    .then(function(response) {
+                        $scope.products = response.data;
+                        $scope.filteredProducts = angular.copy($scope.products);
+                    })
+                    .catch(function(error) {
+                        console.error('Error loading products:', error);
+                    });
+            };
+            
+            // Search products
+            $scope.searchProducts = function() {
+                if (!$scope.searchQuery) {
+                    $scope.filteredProducts = angular.copy($scope.products);
+                    return;
+                }
+                
+                const query = $scope.searchQuery.toLowerCase();
+                $scope.filteredProducts = $scope.products.filter(product => {
+                    return product.name.toLowerCase().includes(query);
+                });
+                
+                // Highlight matching products
+                $scope.products.forEach(product => {
+                    product.highlight = product.name.toLowerCase().includes(query);
+                });
+            };
+            
+            // Add to cart
+            $scope.addToCart = function(product) {
+                $http.post('/api/cart', {
+                    productId: product.id,
+                    name: product.name,
+                    price: product.price,
+                    image: product.image
+                }).then(function(response) {
+                    alert('Product added to cart!');
+                }).catch(function(error) {
+                    console.error('Error adding to cart:', error);
+                    alert('Failed to add product to cart');
+                });
+            };
+            
+            // Signup functions
+            $scope.openSignup = function() {
+                document.getElementById('signupPopup').style.display = 'block';
+                document.getElementById('overlay').style.display = 'block';
+            };
+            
+            $scope.resetData = function() {
+                localStorage.clear();
+                location.reload();
+            };
+            
+            // Initialize
+            $scope.loadProducts();
+        }]);
             
    </script>
    <style>
