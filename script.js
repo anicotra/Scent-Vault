@@ -344,3 +344,175 @@ function proceedToPayment() {
    window.location.href = 'payment.html';
 }
 
+
+
+(function() {
+  // --- Utility Validation Functions ---
+
+  // Validate email address format.
+  function validateEmail(email) {
+    var re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  }
+
+  // Validate credit card number (simple 16-digit check after removing spaces).
+  function validateCreditCardNumber(number) {
+    number = number.replace(/\s+/g, '');
+    var re = /^\d{16}$/;
+    return re.test(number);
+  }
+
+  // Validate expiration date in MM/YY format and ensure it is in the future.
+  function validateExpiry(expiry) {
+    // Check format MM/YY
+    var re = /^(0[1-9]|1[0-2])\/\d{2}$/;
+    if (!re.test(expiry)) {
+      return false;
+    }
+    var parts = expiry.split('/');
+    var month = parseInt(parts[0], 10);
+    var year = parseInt(parts[1], 10) + 2000; // Assumes 20XX
+    // Set expiry to the first day of the following month
+    var expiryDate = new Date(year, month);
+    var now = new Date();
+    return expiryDate > now;
+  }
+
+  // Validate CVV (3 or 4 digits).
+  function validateCVV(cvv) {
+    var re = /^\d{3,4}$/;
+    return re.test(cvv);
+  }
+
+  // --- Verifier Functions ---
+
+  // Verifier for Payment page forms.
+  function verifyPaymentForm() {
+    // Get billing address fields
+    var billingFirstName = document.getElementById('billingFirstName');
+    var billingLastName  = document.getElementById('billingLastName');
+    var billingAddress   = document.getElementById('billingAddress');
+    var billingCity      = document.getElementById('billingCity');
+    var billingState     = document.getElementById('billingState');
+    var billingZip       = document.getElementById('billingZip');
+    // Get credit card fields (if present)
+    var cardNumber       = document.getElementById('cardNumber');
+    var cardExpiry       = document.getElementById('cardExpiry');
+    var cardCvv          = document.getElementById('cardCvv');
+
+    // Verify billing information exists and is not empty.
+    if (billingFirstName && billingLastName && billingAddress &&
+        billingCity && billingState && billingZip) {
+      if (
+        billingFirstName.value.trim() === '' ||
+        billingLastName.value.trim()  === '' ||
+        billingAddress.value.trim()   === '' ||
+        billingCity.value.trim()      === '' ||
+        billingState.value.trim()     === '' ||
+        billingZip.value.trim()       === ''
+      ) {
+        alert('Please fill out all required billing information.');
+        return false;
+      }
+    }
+
+    // Verify credit card details if the card fields exist.
+    if (cardNumber && cardExpiry && cardCvv) {
+      if (!validateCreditCardNumber(cardNumber.value)) {
+        alert('Invalid credit card number. Please enter a 16-digit number.');
+        return false;
+      }
+      if (!validateExpiry(cardExpiry.value)) {
+        alert('Invalid expiry date. Please enter in MM/YY format and ensure the card is not expired.');
+        return false;
+      }
+      if (!validateCVV(cardCvv.value)) {
+        alert('Invalid CVV. Please enter a 3 or 4 digit code.');
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Verifier for Confirmation page data.
+  function verifyConfirmationData() {
+    var shippingData = localStorage.getItem('shippingData');
+    var paymentData  = localStorage.getItem('paymentData');
+
+    if (!shippingData) {
+      console.error('Missing shipping data in localStorage.');
+      return false;
+    }
+    if (!paymentData) {
+      console.error('Missing payment data in localStorage.');
+      return false;
+    }
+    // Optionally, you can add further checks for order items, totals, etc.
+    return true;
+  }
+
+  // Verifier for Returns page form.
+  function verifyReturnRequest() {
+    // Verify that either email or order number is provided.
+    var orderEmail  = document.getElementById('orderEmail');
+    var orderNumber = document.getElementById('orderNumber');
+
+    if (orderEmail && orderNumber) {
+      if (orderEmail.value.trim() === '' && orderNumber.value.trim() === '') {
+        alert('Please enter either your email address or order number.');
+        return false;
+      }
+      if (orderEmail.value.trim() !== '' && !validateEmail(orderEmail.value.trim())) {
+        alert('Please enter a valid email address.');
+        return false;
+      }
+    }
+
+    // Verify that a return reason is selected.
+    // (Assumes a hidden input with id "returnReason" is updated when a reason is chosen.)
+    var returnReason = document.getElementById('returnReason');
+    if (returnReason) {
+      if (returnReason.value.trim() === '') {
+        alert('Please select a return reason.');
+        return false;
+      }
+      // If reason is "other", ensure details are provided.
+      if (returnReason.value.trim() === 'other') {
+        var returnDetails = document.getElementById('returnDetails');
+        if (returnDetails && returnDetails.value.trim() === '') {
+          alert('Please provide details for the return.');
+          return false;
+        }
+      }
+    }
+
+    // Verify that at least one item is selected for return.
+    
+    var checkboxes = document.querySelectorAll('.return-item-checkbox');
+    var itemSelected = false;
+    checkboxes.forEach(function(checkbox) {
+      if (checkbox.checked) {
+        itemSelected = true;
+      }
+    });
+    if (!itemSelected) {
+      alert('Please select at least one item to return.');
+      return false;
+    }
+
+    return true;
+  }
+
+  // --- Expose the verifiers to the Global Scope ---
+  window.JSVerifiers = {
+    // Utility functions
+    validateEmail: validateEmail,
+    validateCreditCardNumber: validateCreditCardNumber,
+    validateExpiry: validateExpiry,
+    validateCVV: validateCVV,
+    // Page verifiers
+    verifyPaymentForm: verifyPaymentForm,
+    verifyConfirmationData: verifyConfirmationData,
+    verifyReturnRequest: verifyReturnRequest
+  };
+})();
