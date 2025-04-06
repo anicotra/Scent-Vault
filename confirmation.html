@@ -128,51 +128,63 @@
       <script>
          document.addEventListener('DOMContentLoaded', function() {
          // Get order data from localStorage
-         const order = JSON.parse(localStorage.getItem('currentOrder')) || {};
+         const order = JSON.parse(localStorage.getItem('shippingData')) || {};
          const paymentData = JSON.parse(localStorage.getItem('paymentData')) || {};
          
          // Display confirmation number
          document.getElementById('confirmationNumber').textContent =
-         order.confirmation || 'SCV-' + Date.now().toString().slice(-8);
+         order.confirmationNumber || 'SCV-' + Date.now().toString().slice(-8);
          
          // Display date
          document.getElementById('orderDate').textContent =
          order.date ? new Date(order.date).toLocaleString() : new Date().toLocaleString();
          
          // Display shipping info
-         if (order.shipping && order.shipping.address) {
-         const addr = order.shipping.address;
-         document.getElementById('shippingAddress').innerHTML = `
-         ${addr.firstName} ${addr.lastName}<br>
-                 ${addr.address}<br>
-                 ${addr.city}, ${addr.state} ${addr.zip}
-               `;
-               document.getElementById('shippingMethod').textContent =
-                 order.shipping.method || 'Standard';
-               document.getElementById('shippingCost').textContent =
-                 order.shippingCost ? order.shippingCost.toFixed(2) : '5.99';
-             }
+         if (order.address) {
+         const addr = order.address;
+         let shippingHTML = '';
          
-             // Display payment info - NOW WITH CARD DETAILS
-             const paymentMethod = order.billing?.payment?.method || paymentData.method || 'credit';
+         if (addr.firstName || addr.lastName) {
+         shippingHTML += `${addr.firstName || ''} ${addr.lastName || ''}<br>`;
+            }
+            if (addr.address) {
+               shippingHTML += `${addr.address}<br>`;
+            }
+            if (addr.city || addr.state || addr.zipCode) {
+               shippingHTML += `${addr.city || ''}, ${addr.state || ''} ${addr.zipCode || ''}<br>`;
+            }
+         
+            if (shippingHTML) {
+               document.getElementById('shippingAddress').innerHTML = shippingHTML;
+            }
+         
+            document.getElementById('shippingMethod').textContent =
+               order.method || 'Standard';
+         
+            document.getElementById('shippingCost').textContent =
+               order.shipping ? order.shipping.toFixed(2) : '5.99';
+         }
+         
+             // Display payment info
+             const paymentMethod = order.payment?.method || paymentData.method || 'credit';
              document.getElementById('paymentMethod').textContent =
-               paymentMethod === 'credit' ? 'Credit/Debit Card';
+                 paymentMethod === 'credit' ? 'Credit/Debit Card' : paymentMethod;
          
-             const lastFour = order.billing?.payment?.lastFour ||
+             const lastFour = order.payment?.lastFour ||
                             (paymentData.cardNumber ? paymentData.cardNumber.slice(-4) : null);
              document.getElementById('cardLastFour').textContent =
-               lastFour ? '•••• ' + lastFour : 'Not available';
+                 lastFour ? '•••• ' + lastFour : 'Not available';
          
              // Display order items
              const orderItems = document.getElementById('orderItems');
              if (order.items && order.items.length > 0) {
-               order.items.forEach(item => {
-                 const itemDiv = document.createElement('div');
-                 itemDiv.className = 'order-item';
-                 itemDiv.innerHTML = `
-         <div>
-            <h6>${item.name}</h6>
-            <div>Qty: ${item.quantity || 1} × $${item.price.toFixed(2)}</div>
+                 order.items.forEach(item => {
+                     const itemDiv = document.createElement('div');
+                     itemDiv.className = 'order-item mb-2';
+                     itemDiv.innerHTML = `
+         <div class="d-flex justify-content-between">
+            <span>${item.name || 'Item'}</span>
+            <span>${item.quantity || 1} × $${(item.price || 0).toFixed(2)}</span>
          </div>
          `;
          orderItems.appendChild(itemDiv);
@@ -180,12 +192,10 @@
          }
          
          // Display totals
-         if (order.subtotal) {
-         document.getElementById('subtotal').textContent = '$' + order.subtotal.toFixed(2);
+         document.getElementById('subtotal').textContent = '$' + (order.subtotal || 0).toFixed(2);
          document.getElementById('tax').textContent = '$' + (order.tax || 0).toFixed(2);
          document.getElementById('shipping').textContent = '$' + (order.shippingCost || 0).toFixed(2);
-         document.getElementById('total').textContent = '$' + order.total.toFixed(2);
-         }
+         document.getElementById('total').textContent = '$' + (order.total || 0).toFixed(2);
          });
 
       
