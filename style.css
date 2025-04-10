@@ -434,3 +434,19 @@ input[readonly], select[readonly] {
    border-radius: 4px;
 }
 
+.product-img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.table {
+  margin-bottom: 20px;
+}
+
+.table th {
+  font-weight: 600;
+  border-bottom: 2px solid #dee2e6;
+}
+
