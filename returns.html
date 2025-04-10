@@ -193,8 +193,9 @@
       return function(input, min, max) {
         min = parseInt(min);
         max = parseInt(max);
-        for (var i = min; i <= max; i++)
+        for (var i = min; i <= max; i++) {
           input.push(i);
+        }
         return input;
       };
     })
@@ -221,8 +222,9 @@
         details: ''
       };
 
-      // Find orders for return based on email and confirmation number from localStorage
+      // Find orders for return by matching email and confirmation number from localStorage
       $scope.findOrders = function() {
+        // Check that both fields are filled in
         if (!$scope.search.email || !$scope.search.orderNumber) {
           alert('Please enter both your email address and order number');
           return;
@@ -232,18 +234,27 @@
         $scope.orders = [];
         $scope.selectedOrder = null;
 
-        // Get order data from localStorage
+        // Retrieve the complete order data from localStorage
         const completeOrderData = JSON.parse(localStorage.getItem('completeOrderData'));
 
         if (completeOrderData) {
-          // Compare emails case-insensitively and confirmation number exactly
+          // Compare emails (case-insensitive) and the confirmation number exactly.
           if (
             completeOrderData.shopper &&
             completeOrderData.order &&
             completeOrderData.shopper.email.toLowerCase() === $scope.search.email.toLowerCase() &&
             completeOrderData.order.confirmationNumber === $scope.search.orderNumber
           ) {
-            $scope.orders.push(completeOrderData);
+            // Build an order object that your returns screen expects.
+            // Here, orderId is set to the confirmationNumber and items are taken from the cart.
+            let foundOrder = {
+              orderId: completeOrderData.order.confirmationNumber,
+              date: completeOrderData.order.date,
+              total: completeOrderData.order.total,
+              items: completeOrderData.cart
+            };
+
+            $scope.orders.push(foundOrder);
           } else {
             alert('No orders found matching your criteria.');
           }
@@ -255,15 +266,17 @@
       // Select an order
       $scope.selectOrder = function(order) {
         $scope.selectedOrder = angular.copy(order);
+        // Prepare order items for return process
         $scope.selectedOrder.items.forEach(item => {
           item.selected = false;
           item.returnQty = 1;
         });
       };
 
+      // Retrieve processed returns from localStorage (if any)
       $scope.processedReturns = JSON.parse(localStorage.getItem('processedReturns')) || [];
 
-      // Update selected items
+      // Update selected items for return
       $scope.updateSelectedItems = function() {
         $scope.selectedItems = $scope.selectedOrder.items.filter(item => item.selected);
       };
@@ -276,23 +289,24 @@
         }
       };
 
-      // Get reason label
+      // Get reason label (for display)
       $scope.getReasonLabel = function(value) {
         const reason = $scope.returnReasons.find(r => r.value === value);
         return reason ? reason.label : '';
       };
 
-      // Calculate refund amounts
+      // Calculate refund subtotal based on selected items
       $scope.calculateRefundSubtotal = function() {
         return $scope.selectedItems.reduce((sum, item) => sum + (item.price * item.returnQty), 0);
       };
 
+      // Calculate total refund (including 6% tax)
       $scope.calculateTotalRefund = function() {
         const subtotal = $scope.calculateRefundSubtotal();
-        return subtotal + (subtotal * 0.06); // Including tax
+        return subtotal + (subtotal * 0.06);
       };
 
-      // Navigation
+      // Navigation functions
       $scope.nextStep = function() {
         $scope.currentStep++;
       };
@@ -301,7 +315,7 @@
         $scope.currentStep--;
       };
 
-      // Submit return
+      // Submit return request
       $scope.submitReturn = function() {
         if (!$scope.returnData.reason) {
           alert('Please select a return reason');
@@ -323,16 +337,16 @@
           status: 'pending'
         };
 
-        // Mock submission for demonstration
+        // For demonstration, we alert and then redirect.
         alert('Return request submitted successfully!\n\nYou will be redirected to the home page.');
 
-        // Redirect to home page after 2 seconds using plain JavaScript
+        // Redirect to home page after 2 seconds
         setTimeout(function() {
           window.location.href = 'index.html';
         }, 2000);
 
         /*
-        // In production, use this instead:
+        // In production, you could post the returnRequest to your API:
         $http.post('/api/returns', returnRequest)
           .then(function(response) {
             alert('Your return request has been submitted successfully!');
@@ -347,6 +361,7 @@
 
     }]);
 </script>
+
 </body>
 
 </html>
