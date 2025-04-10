@@ -200,7 +200,7 @@
       };
     })
     .controller('ReturnsController', ['$scope', '$http', function($scope, $http) {
-      // Initialize data
+      // Initialize variables
       $scope.currentStep = 1;
       $scope.search = {
         email: '',
@@ -222,31 +222,32 @@
         details: ''
       };
 
-      // Find orders for return by matching email and confirmation number from localStorage
+      // Find orders based on email and order number from localStorage
       $scope.findOrders = function() {
-        // Check that both fields are filled in
         if (!$scope.search.email || !$scope.search.orderNumber) {
           alert('Please enter both your email address and order number');
           return;
         }
 
-        // Clear previous results
+        // Debug: show what we're searching for
+        console.log("Searching orders for email:", $scope.search.email, "and order number:", $scope.search.orderNumber);
+
+        // Clear previous orders
         $scope.orders = [];
         $scope.selectedOrder = null;
 
-        // Retrieve the complete order data from localStorage
+        // Retrieve stored complete order data
         const completeOrderData = JSON.parse(localStorage.getItem('completeOrderData'));
+        console.log("completeOrderData retrieved:", completeOrderData);
 
         if (completeOrderData) {
-          // Compare emails (case-insensitive) and the confirmation number exactly.
           if (
             completeOrderData.shopper &&
             completeOrderData.order &&
             completeOrderData.shopper.email.toLowerCase() === $scope.search.email.toLowerCase() &&
             completeOrderData.order.confirmationNumber === $scope.search.orderNumber
           ) {
-            // Build an order object that your returns screen expects.
-            // Here, orderId is set to the confirmationNumber and items are taken from the cart.
+            // Build an order object as expected by the returns process
             let foundOrder = {
               orderId: completeOrderData.order.confirmationNumber,
               date: completeOrderData.order.date,
@@ -255,33 +256,36 @@
             };
 
             $scope.orders.push(foundOrder);
+            console.log("Order found:", foundOrder);
           } else {
             alert('No orders found matching your criteria.');
+            console.log("No match: criteria did not match stored order data.");
           }
         } else {
           alert('No orders available in storage.');
+          console.log("completeOrderData not found in localStorage.");
         }
       };
 
-      // Select an order
+      // Select an order to work with
       $scope.selectOrder = function(order) {
         $scope.selectedOrder = angular.copy(order);
-        // Prepare order items for return process
+        // Initialize items for return process
         $scope.selectedOrder.items.forEach(item => {
           item.selected = false;
           item.returnQty = 1;
         });
       };
 
-      // Retrieve processed returns from localStorage (if any)
+      // Retrieve processed returns from localStorage, if any
       $scope.processedReturns = JSON.parse(localStorage.getItem('processedReturns')) || [];
 
-      // Update selected items for return
+      // Update the list of selected items for return
       $scope.updateSelectedItems = function() {
         $scope.selectedItems = $scope.selectedOrder.items.filter(item => item.selected);
       };
 
-      // Select return reason
+      // Select a return reason
       $scope.selectReason = function(reason) {
         $scope.returnData.reason = reason.value;
         if (reason.value !== 'other') {
@@ -289,7 +293,7 @@
         }
       };
 
-      // Get reason label (for display)
+      // Helper: Get label for a reason
       $scope.getReasonLabel = function(value) {
         const reason = $scope.returnReasons.find(r => r.value === value);
         return reason ? reason.label : '';
@@ -300,7 +304,7 @@
         return $scope.selectedItems.reduce((sum, item) => sum + (item.price * item.returnQty), 0);
       };
 
-      // Calculate total refund (including 6% tax)
+      // Calculate total refund including tax (6%)
       $scope.calculateTotalRefund = function() {
         const subtotal = $scope.calculateRefundSubtotal();
         return subtotal + (subtotal * 0.06);
@@ -337,16 +341,15 @@
           status: 'pending'
         };
 
-        // For demonstration, we alert and then redirect.
         alert('Return request submitted successfully!\n\nYou will be redirected to the home page.');
 
-        // Redirect to home page after 2 seconds
+        // Redirect after 2 seconds
         setTimeout(function() {
           window.location.href = 'index.html';
         }, 2000);
 
+        // Uncomment below to send returnRequest to your backend API
         /*
-        // In production, you could post the returnRequest to your API:
         $http.post('/api/returns', returnRequest)
           .then(function(response) {
             alert('Your return request has been submitted successfully!');
@@ -361,6 +364,7 @@
 
     }]);
 </script>
+
 
 </body>
 
