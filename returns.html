@@ -190,178 +190,164 @@
 <script>
   angular.module('returnsApp', [])
     .filter('range', function() {
-      return function(input, min, max) {
-        min = parseInt(min);
-        max = parseInt(max);
-        for (var i = min; i <= max; i++) {
-          input.push(i);
-        }
-        return input;
-      };
+        return function(input, min, max) {
+            min = parseInt(min);
+            max = parseInt(max);
+            for (var i=min; i<=max; i++)
+                input.push(i);
+            return input;
+        };
     })
     .controller('ReturnsController', ['$scope', '$http', function($scope, $http) {
-      // Initialize variables
-      $scope.currentStep = 1;
-      $scope.search = {
-        email: '',
-        orderNumber: ''
-      };
-      $scope.orders = [];
-      $scope.selectedOrder = null;
-      $scope.selectedItems = [];
-      $scope.returnReasons = [
-        { value: 'wrong-item', label: 'Wrong Item Received' },
-        { value: 'defective', label: 'Defective/Damaged' },
-        { value: 'not-as-described', label: 'Not As Described' },
-        { value: 'no-longer-needed', label: 'No Longer Needed' },
-        { value: 'better-price', label: 'Found Better Price' },
-        { value: 'other', label: 'Other Reason' }
-      ];
-      $scope.returnData = {
-        reason: '',
-        details: ''
-      };
-
-      // Find orders based on email and order number from localStorage
-      $scope.findOrders = function() {
-        if (!$scope.search.email || !$scope.search.orderNumber) {
-          alert('Please enter both your email address and order number');
-          return;
-        }
-
-        // Debug: show what we're searching for
-        console.log("Searching orders for email:", $scope.search.email, "and order number:", $scope.search.orderNumber);
-
-        // Clear previous orders
+        // Initialize data
+        $scope.currentStep = 1;
+        $scope.search = {
+            email: '',
+            orderNumber: ''
+        };
         $scope.orders = [];
         $scope.selectedOrder = null;
-
-        // Retrieve stored complete order data
-        const completeOrderData = JSON.parse(localStorage.getItem('completeOrderData'));
-        console.log("completeOrderData retrieved:", completeOrderData);
-
-        if (completeOrderData) {
-          if (
-            completeOrderData.shopper &&
-            completeOrderData.order &&
-            completeOrderData.shopper.email.toLowerCase() === $scope.search.email.toLowerCase() &&
-            completeOrderData.order.confirmationNumber === $scope.search.orderNumber
-          ) {
-            // Build an order object as expected by the returns process
-            let foundOrder = {
-              orderId: completeOrderData.order.confirmationNumber,
-              date: completeOrderData.order.date,
-              total: completeOrderData.order.total,
-              items: completeOrderData.cart
-            };
-
-            $scope.orders.push(foundOrder);
-            console.log("Order found:", foundOrder);
-          } else {
-            alert('No orders found matching your criteria.');
-            console.log("No match: criteria did not match stored order data.");
-          }
-        } else {
-          alert('No orders available in storage.');
-          console.log("completeOrderData not found in localStorage.");
-        }
-      };
-
-      // Select an order to work with
-      $scope.selectOrder = function(order) {
-        $scope.selectedOrder = angular.copy(order);
-        // Initialize items for return process
-        $scope.selectedOrder.items.forEach(item => {
-          item.selected = false;
-          item.returnQty = 1;
-        });
-      };
-
-      // Retrieve processed returns from localStorage, if any
-      $scope.processedReturns = JSON.parse(localStorage.getItem('processedReturns')) || [];
-
-      // Update the list of selected items for return
-      $scope.updateSelectedItems = function() {
-        $scope.selectedItems = $scope.selectedOrder.items.filter(item => item.selected);
-      };
-
-      // Select a return reason
-      $scope.selectReason = function(reason) {
-        $scope.returnData.reason = reason.value;
-        if (reason.value !== 'other') {
-          $scope.returnData.details = '';
-        }
-      };
-
-      // Helper: Get label for a reason
-      $scope.getReasonLabel = function(value) {
-        const reason = $scope.returnReasons.find(r => r.value === value);
-        return reason ? reason.label : '';
-      };
-
-      // Calculate refund subtotal based on selected items
-      $scope.calculateRefundSubtotal = function() {
-        return $scope.selectedItems.reduce((sum, item) => sum + (item.price * item.returnQty), 0);
-      };
-
-      // Calculate total refund including tax (6%)
-      $scope.calculateTotalRefund = function() {
-        const subtotal = $scope.calculateRefundSubtotal();
-        return subtotal + (subtotal * 0.06);
-      };
-
-      // Navigation functions
-      $scope.nextStep = function() {
-        $scope.currentStep++;
-      };
-
-      $scope.prevStep = function() {
-        $scope.currentStep--;
-      };
-
-      // Submit return request
-      $scope.submitReturn = function() {
-        if (!$scope.returnData.reason) {
-          alert('Please select a return reason');
-          return;
-        }
-
-        const returnRequest = {
-          orderId: $scope.selectedOrder.orderId,
-          customerEmail: $scope.search.email,
-          items: $scope.selectedItems.map(item => ({
-            productId: item.productId,
-            name: item.name,
-            quantity: item.returnQty,
-            price: item.price
-          })),
-          reason: $scope.returnData.reason,
-          details: $scope.returnData.details,
-          refundAmount: $scope.calculateTotalRefund(),
-          status: 'pending'
+        $scope.selectedItems = [];
+        $scope.returnReasons = [
+            { value: 'wrong-item', label: 'Wrong Item Received' },
+            { value: 'defective', label: 'Defective/Damaged' },
+            { value: 'not-as-described', label: 'Not As Described' },
+            { value: 'no-longer-needed', label: 'No Longer Needed' },
+            { value: 'better-price', label: 'Found Better Price' },
+            { value: 'other', label: 'Other Reason' }
+        ];
+        $scope.returnData = {
+            reason: '',
+            details: ''
+        };
+        
+        // Find orders for return
+        $scope.findOrders = function() {
+           if (!$scope.search.email && !$scope.search.orderNumber) {
+              alert('Please enter either your email address or order number');
+              return;
+           }
+           
+           // Clear previous results
+           $scope.orders = [];
+           $scope.selectedOrder = null;
+           
+           // Get order data from localStorage
+           const orderData = JSON.parse(localStorage.getItem('currentOrder')) || {};
+           const shippingData = JSON.parse(localStorage.getItem('shippingData')) || {};
+           const cart = JSON.parse(localStorage.getItem('cart')) || [];
+           
+           // Check if we have an order that matches the search criteria
+           if ((orderData.confirmation && $scope.search.orderNumber && 
+                orderData.confirmation.includes($scope.search.orderNumber)) ||
+               (shippingData.address && shippingData.address.email && 
+                shippingData.address.email === $scope.search.email)) {
+               
+               // Format the order for display
+               $scope.orders = [{
+                   orderId: orderData.confirmation || 'SCV-' + Date.now().toString().slice(-8),
+                   date: new Date(orderData.date || Date.now()),
+                   total: orderData.total || 0,
+                   items: cart.map(item => ({
+                       productId: 'prod-' + Math.floor(Math.random() * 1000000), // Generate a fake product ID if none exists
+                       name: item.name,
+                       price: item.price,
+                       quantity: item.quantity || 1,
+                       image: item.img || 'https://via.placeholder.com/60',
+                       category: item.category || 'Fragrance'
+                   }))
+               }];
+               
+               if ($scope.orders.length === 0) {
+                   alert('No orders found matching your criteria');
+               }
+           } else {
+               alert('No orders found matching your criteria');
+           }
+        };
+        
+        // Select an order
+        $scope.selectOrder = function(order) {
+            $scope.selectedOrder = angular.copy(order);
+            $scope.selectedOrder.items.forEach(item => {
+                item.selected = false;
+                item.returnQty = 1;
+            });
         };
 
+        $scope.processedReturns = JSON.parse(localStorage.getItem('processedReturns')) || [];
+
+        // Update selected items
+        $scope.updateSelectedItems = function() {
+            $scope.selectedItems = $scope.selectedOrder.items.filter(item => item.selected);
+        };
+        
+        // Select return reason
+        $scope.selectReason = function(reason) {
+            $scope.returnData.reason = reason.value;
+            if (reason.value !== 'other') {
+                $scope.returnData.details = '';
+            }
+        };
+        
+        // Get reason label
+        $scope.getReasonLabel = function(value) {
+            const reason = $scope.returnReasons.find(r => r.value === value);
+            return reason ? reason.label : '';
+        };
+        
+        // Calculate refund amounts
+        $scope.calculateRefundSubtotal = function() {
+            return $scope.selectedItems.reduce((sum, item) => sum + (item.price * item.returnQty), 0);
+        };
+        
+        $scope.calculateTotalRefund = function() {
+            const subtotal = $scope.calculateRefundSubtotal();
+            return subtotal + (subtotal * 0.06); // Including tax
+        };
+        
+        // Navigation
+        $scope.nextStep = function() {
+            $scope.currentStep++;
+        };
+        
+        $scope.prevStep = function() {
+            $scope.currentStep--;
+        };
+        
+        // Submit return
+        $scope.submitReturn = function() {
+        if (!$scope.returnData.reason) {
+        alert('Please select a return reason');
+        return;
+        }
+        
+        const returnRequest = {
+           orderId: $scope.selectedOrder.orderId,
+           customerEmail: $scope.search.email,
+           items: $scope.selectedItems.map(item => ({
+           productId: item.productId,
+           name: item.name,
+           quantity: item.returnQty,
+           price: item.price
+        })),
+           reason: $scope.returnData.reason,
+           details: $scope.returnData.details,
+           refundAmount: $scope.calculateTotalRefund(),
+           status: 'pending'
+           };
+        
+        // Store the processed return
+        $scope.processedReturns.push(returnRequest);
+        localStorage.setItem('processedReturns', JSON.stringify($scope.processedReturns));
+        
         alert('Return request submitted successfully!\n\nYou will be redirected to the home page.');
-
-        // Redirect after 2 seconds
+        
+        // Redirect to home page after 2 seconds
         setTimeout(function() {
-          window.location.href = 'index.html';
+           window.location.href = 'index.html';
         }, 2000);
-
-        // Uncomment below to send returnRequest to your backend API
-        /*
-        $http.post('/api/returns', returnRequest)
-          .then(function(response) {
-            alert('Your return request has been submitted successfully!');
-            window.location.href = 'index.html';
-          })
-          .catch(function(error) {
-            alert('Error submitting return request. Please try again.');
-            console.error(error);
-          });
-        */
-      };
-
+        };
     }]);
 </script>
 
