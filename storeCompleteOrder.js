@@ -1,6 +1,7 @@
 // storeCompleteOrder.js
 
 (function () {
+  
   try {
     // Load individual pieces from localStorage
     const shopper = JSON.parse(localStorage.getItem("shoppers"))?.slice(-1)[0] || {};
@@ -33,12 +34,21 @@
       returns
     };
 
-    // Store into localStorage
+    // Get existing orders or create empty array
+    const orderHistory = JSON.parse(localStorage.getItem("orderHistory")) || [];
+    
+    // Add new order to history
+    orderHistory.push(completeOrderData);
+    
+    // Store updated history
+    localStorage.setItem("orderHistory", JSON.stringify(orderHistory));
+    
+    // Also keep the most recent order available separately
     localStorage.setItem("completeOrderData", JSON.stringify(completeOrderData));
 
-    console.log("✅ completeOrderData saved to localStorage:");
-    console.log(completeOrderData);
+    console.log("✅ Order added to history. Total orders:", orderHistory.length);
+    console.log("Most recent order:", completeOrderData);
   } catch (error) {
-    console.error("❌ Failed to store completeOrderData:", error);
+    console.error("❌ Failed to store order data:", error);
   }
 })();
