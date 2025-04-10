@@ -1,86 +1,67 @@
 // storeCompleteOrder.js
 
-(function () {
+
+(function() {
   try {
-    // Load all relevant data from localStorage
-    const shopper = JSON.parse(localStorage.getItem("shoppers"))?.slice(-1)[0] || {};
-    const cart = JSON.parse(localStorage.getItem("cart")) || [];
-    const shipping = JSON.parse(localStorage.getItem("shippingData")) || {};
-    const paymentData = JSON.parse(localStorage.getItem("paymentData")) || {};
-    const currentOrder = JSON.parse(localStorage.getItem("currentOrder")) || {};
-    const returns = JSON.parse(localStorage.getItem("processedReturns")) || [];
-
-    // Calculate totals if not already in currentOrder
-    const subtotal = currentOrder.subtotal || cart.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
-    const tax = currentOrder.tax || subtotal * 0.06; // 6% tax
-    const shippingCost = currentOrder.shippingCost || shipping.shipping || 0;
-    const total = currentOrder.total || subtotal + tax + shippingCost;
-
-    // Enhanced order data with complete item details
-    const completeOrderData = {
-      shopper: {
-        ...shopper,
-        email: shipping.address?.email || shopper.email // Ensure email is captured
+    // 1. Get RAW data from localStorage
+    const rawCart = JSON.parse(localStorage.getItem('cart')) || [];
+    const rawShopper = JSON.parse(localStorage.getItem('shoppers'))?.slice(-1)[0] || {};
+    const rawShipping = JSON.parse(localStorage.getItem('shippingData')) || {};
+    
+    // 2. Transform cart items to consistent format
+    const orderItems = rawCart.map((item, index) => ({
+      id: `item-${Date.now()}-${index}`,
+      name: item.name || `Product ${index + 1}`,
+      price: Number(item.price) || 0,
+      quantity: Number(item.quantity) || 1,
+      image: item.image || item.img || 'https://via.placeholder.com/150',
+      category: item.category || item.desc || 'General'
+    }));
+    
+    // 3. Calculate totals
+    const subtotal = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const tax = subtotal * 0.06;
+    const shippingCost = Number(rawShipping.shipping) || 0;
+    const total = subtotal + tax + shippingCost;
+    
+    // 4. Build the COMPLETE order object
+    const completeOrder = {
+      id: `SCV-${Date.now().toString().slice(-8)}`,
+      date: new Date().toISOString(),
+      customer: {
+        ...rawShopper,
+        email: rawShipping.address?.email || rawShopper.email
       },
-      items: cart.map(item => ({
-        productId: item.name.replace(/\s+/g, '-').toLowerCase() + '-' + Math.random().toString(36).substr(2, 5),
-        name: item.name,
-        description: item.desc || '',
-        category: item.category || '',
-        price: item.price,
-        quantity: item.quantity || 1,
-        image: item.image || item.img || 'https://via.placeholder.com/150'
-      })),
+      items: orderItems,
       shipping: {
-        ...shipping,
-        address: shipping.address || currentOrder.billing?.address || {}
+        ...rawShipping,
+        cost: shippingCost
       },
-      billing: {
-        address: currentOrder.billing?.address || {},
-        payment: {
-          method: currentOrder.billing?.payment?.method || paymentData.method || "unknown",
-          cardLastFour: currentOrder.billing?.payment?.lastFour || 
-                       (paymentData.cardNumber ? paymentData.cardNumber.slice(-4) : "****")
-        }
+      payment: {
+        method: 'credit', // Default
+        lastFour: '****' // Default
       },
-      order: {
-        confirmationNumber: currentOrder.confirmation || "SCV-" + Date.now().toString().slice(-8),
-        date: currentOrder.date || new Date().toISOString(),
-        subtotal: subtotal,
-        tax: tax,
-        shippingCost: shippingCost,
-        total: total
-      },
-      returns
+      totals: {
+        subtotal,
+        tax,
+        shipping: shippingCost,
+        total
+      }
     };
-
-    // Get existing order history or initialize
-    const orderHistory = JSON.parse(localStorage.getItem("orderHistory")) || [];
     
-    // Add new order to history (prepend so newest appears first)
-    orderHistory.unshift(completeOrderData);
+    // 5. Save to localStorage in MULTIPLE formats for compatibility
+    localStorage.setItem('completeOrderData', JSON.stringify(completeOrder));
+    localStorage.setItem('currentOrder', JSON.stringify(completeOrder));
     
-    // Keep only the last 50 orders to prevent localStorage overflow
-    const trimmedHistory = orderHistory.slice(0, 50);
+    // 6. Add to order history
+    const history = JSON.parse(localStorage.getItem('orderHistory')) || [];
+    history.unshift(completeOrder);
+    localStorage.setItem('orderHistory', JSON.stringify(history.slice(0, 50))); // Keep last 50 orders
     
-    // Update localStorage
-    localStorage.setItem("orderHistory", JSON.stringify(trimmedHistory));
-    localStorage.setItem("completeOrderData", JSON.stringify(completeOrderData));
-    localStorage.setItem("currentOrder", JSON.stringify(completeOrderData)); // For backward compatibility
-
-    console.log("✅ Order successfully saved. History now contains:", trimmedHistory.length, "orders");
-    console.log("Latest order details:", completeOrderData);
+    console.log('✅ Order saved successfully!', completeOrder);
   } catch (error) {
-    console.error("❌ Error saving order data:", error);
-    
-    // Fallback: At least save the cart data
-    try {
-      localStorage.setItem("orderBackup_" + Date.now(), JSON.stringify({
-        cart: JSON.parse(localStorage.getItem("cart")),
-        timestamp: new Date().toISOString()
-      }));
-    } catch (e) {
-      console.error("Couldn't even save backup:", e);
-    }
+    console.error('❌ Failed to save order:', error);
+    // Emergency backup of cart
+    localStorage.setItem('lastCartBackup', localStorage.getItem('cart'));
   }
 })();
