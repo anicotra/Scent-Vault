@@ -65,39 +65,44 @@
             <p>Order #{{selectedOrder.orderId}} - Placed on {{selectedOrder.date | date: 'mediumDate'}}</p>
 
             <div class="table-responsive">
-               <table class="table">
-                  <thead>
-                     <tr>
-                        <th></th>
-                        <th>Product</th>
-                        <th>Price</th>
-                        <th>Quantity</th>
-                     </tr>
-                  </thead>
-                  <tbody>
-                     <tr ng-repeat="item in selectedOrder.items">
-                        <td>
-                           <input type="checkbox" ng-model="item.selected" ng-change="updateSelectedItems()">
-                        </td>
-                        <td>
-                           <div class="d-flex align-items-center">
-                              <img ng-src="{{item.image}}" alt="{{item.name}}" class="product-img me-3">
-                              <div>
-                                 <h6 class="mb-1">{{item.name}}</h6>
-                                 <small class="text-muted">{{item.category}}</small>
-                              </div>
-                           </div>
-                        </td>
-                        <td>${{item.price.toFixed(2)}}</td>
-                        <td>
-                           <select class="form-select" ng-model="item.returnQty" ng-change="updateSelectedItems()" style="width: 80px;">
-                              <option ng-repeat="n in [] | range:1:item.quantity" value="{{n}}">{{n}}</option>
-                           </select>
-                        </td>
-                     </tr>
-                  </tbody>
-               </table>
+  <table class="table">
+    <thead>
+      <tr>
+        <th></th>
+        <th>Product</th>
+        <th>Price</th>
+        <th>Quantity</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ng-repeat="item in selectedOrder.items">
+        <td>
+          <input type="checkbox" ng-model="item.selected" ng-change="updateSelectedItems()">
+        </td>
+        <td>
+          <div class="d-flex align-items-center">
+            <img ng-src="{{item.image || item.img || 'https://via.placeholder.com/60'}}" 
+                 alt="{{item.name}}" 
+                 class="product-img me-3">
+            <div>
+              <h6 class="mb-1">{{item.name}}</h6>
+              <small class="text-muted">{{item.category || 'Fragrance'}}</small>
             </div>
+          </div>
+        </td>
+        <td>${{item.price.toFixed(2)}}</td>
+        <td>
+          <select class="form-select" 
+                  ng-model="item.returnQty" 
+                  ng-change="updateSelectedItems()" 
+                  style="width: 80px;"
+                  ng-options="n for n in [] | range:1:item.quantity">
+          </select>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
 
             <div class="d-flex justify-content-between mt-3">
                <button class="btn btn-outline-secondary" ng-click="prevStep()">Back</button>
