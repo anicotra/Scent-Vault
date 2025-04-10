@@ -102,53 +102,58 @@
             <h4 class="mb-3">Select Items to Return</h4>
             <p>Order #{{selectedOrder.orderId}} - Placed on {{selectedOrder.date | date: 'mediumDate'}}</p>
 
-            <div class="table-responsive">
-               <table class="table">
-                  <thead>
-                     <tr>
-                        <th></th>
-                        <th>Product</th>
-                        <th>Price</th>
-                        <th>Quantity</th>
-                     </tr>
-                  </thead>
-                  <tbody>
-                     <tr ng-if="debugMode">
-                        <td colspan="4" class="text-danger">
-                           Debug: {{selectedOrder.items.length}} items loaded
-                        </td>
-                     </tr>
-                     
-                     <tr ng-repeat="item in selectedOrder.items track by $index">
-                        <td>
-                           <input type="checkbox" ng-model="item.selected" ng-change="updateSelectedItems()">
-                        </td>
-                        <td>
-                           <div class="d-flex align-items-center">
-                              <img ng-src="{{item.image || item.img || 'https://via.placeholder.com/60?text=No+Image'}}" 
-                                   class="product-img me-3">
-                              <div>
-                                 <h6 class="mb-1">{{item.name || 'Unknown Product'}}</h6>
-                                 <small class="text-muted">{{item.category || item.desc || 'Fragrance'}}</small>
-                              </div>
-                           </div>
-                        </td>
-                        <td>${{(item.price || 0).toFixed(2)}}</td>
-                        <td>
-                           <select class="form-select" ng-model="item.returnQty" 
-                                   ng-options="n for n in [] | range:1:(item.quantity || 1)">
-                           </select>
-                        </td>
-                     </tr>
-                     
-                     <tr ng-if="selectedOrder.items && selectedOrder.items.length === 0">
-                        <td colspan="4" class="text-center text-muted">
-                           No items found in this order
-                        </td>
-                     </tr>
-                  </tbody>
-               </table>
+            <div class="table-responsive" ng-if="currentStep == 2">
+  <table class="table">
+    <thead>
+      <tr>
+        <th></th>
+        <th>Product</th>
+        <th>Price</th>
+        <th>Quantity</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Debug Info -->
+      <tr ng-if="debugMode">
+        <td colspan="4" class="text-danger">
+          Debug Info:<br>
+          Order ID: {{selectedOrder.orderId}}<br>
+          Items Count: {{selectedOrder.items ? selectedOrder.items.length : 0}}<br>
+          First Item: {{selectedOrder.items[0] | json}}
+        </td>
+      </tr>
+      
+      <!-- Actual Items -->
+      <tr ng-repeat="item in getDisplayItems() track by $index">
+        <td>
+          <input type="checkbox" ng-model="item.selected" ng-change="updateSelectedItems()">
+        </td>
+        <td>
+          <div class="d-flex align-items-center">
+            <img ng-src="{{getItemImage(item)}}" class="product-img me-3">
+            <div>
+              <h6 class="mb-1">{{item.name || 'Product ' + ($index + 1)}}</h6>
+              <small class="text-muted">{{item.category || item.desc || 'Fragrance'}}</small>
             </div>
+          </div>
+        </td>
+        <td>${{(item.price || 0).toFixed(2)}}</td>
+        <td>
+          <select class="form-select" ng-model="item.returnQty" 
+                  ng-options="n for n in [] | range:1:(item.quantity || 1)">
+          </select>
+        </td>
+      </tr>
+      
+      <!-- Empty State -->
+      <tr ng-if="!selectedOrder.items || selectedOrder.items.length === 0">
+        <td colspan="4" class="text-center text-muted">
+          No items found in this order
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
 
             <div class="d-flex justify-content-between mt-3">
                <button class="btn btn-outline-secondary" ng-click="prevStep()">Back</button>
@@ -257,6 +262,25 @@
                 email: '',
                 orderNumber: ''
             };
+
+           $scope.getDisplayItems = function() {
+    if (!$scope.selectedOrder || !$scope.selectedOrder.items) return [];
+    
+    // Handle both array and object formats
+    if (Array.isArray($scope.selectedOrder.items)) {
+      return $scope.selectedOrder.items;
+    }
+    
+    // Convert object to array if needed
+    return Object.keys($scope.selectedOrder.items).map(function(key) {
+      return $scope.selectedOrder.items[key];
+    });
+  };
+
+  $scope.getItemImage = function(item) {
+    return item.image || item.img || 'https://via.placeholder.com/60?text=No+Image';
+  };
+           
             $scope.orders = [];
             $scope.selectedOrder = null;
             $scope.selectedItems = [];
