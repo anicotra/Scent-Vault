@@ -103,6 +103,7 @@
             <p>Order #{{selectedOrder.orderId}} - Placed on {{selectedOrder.date | date: 'mediumDate'}}</p>
 
             <div class="table-responsive" ng-if="currentStep == 2">
+            <div class="table-responsive" ng-if="currentStep == 2 && selectedOrder">
   <table class="table">
     <thead>
       <tr>
@@ -113,42 +114,32 @@
       </tr>
     </thead>
     <tbody>
-      <!-- Debug Info -->
       <tr ng-if="debugMode">
         <td colspan="4" class="text-danger">
-          Debug Info:<br>
-          Order ID: {{selectedOrder.orderId}}<br>
-          Items Count: {{selectedOrder.items ? selectedOrder.items.length : 0}}<br>
-          First Item: {{selectedOrder.items[0] | json}}
+          Debug Info - Items: {{selectedOrder.items.length}}<br>
+          First Item: {{selectedOrder.items[0] | json}}<br>
+          LocalStorage Cart: {{(JSON.parse(localStorage.getItem('cart')) || []).length}} items
         </td>
       </tr>
       
-      <!-- Actual Items -->
-      <tr ng-repeat="item in getDisplayItems() track by $index">
+      <tr ng-repeat="item in selectedOrder.items track by $index">
+        <td><input type="checkbox" ng-model="item.selected"></td>
         <td>
-          <input type="checkbox" ng-model="item.selected" ng-change="updateSelectedItems()">
+          <img ng-src="{{item.image}}" style="width:50px;height:50px;object-fit:cover;margin-right:10px;">
+          {{item.name}}
         </td>
-        <td>
-          <div class="d-flex align-items-center">
-            <img ng-src="{{getItemImage(item)}}" class="product-img me-3">
-            <div>
-              <h6 class="mb-1">{{item.name || 'Product ' + ($index + 1)}}</h6>
-              <small class="text-muted">{{item.category || item.desc || 'Fragrance'}}</small>
-            </div>
-          </div>
-        </td>
-        <td>${{(item.price || 0).toFixed(2)}}</td>
+        <td>${{item.price.toFixed(2)}}</td>
         <td>
           <select class="form-select" ng-model="item.returnQty" 
-                  ng-options="n for n in [] | range:1:(item.quantity || 1)">
+                  ng-options="n for n in [] | range:1:item.quantity">
           </select>
         </td>
       </tr>
       
-      <!-- Empty State -->
-      <tr ng-if="!selectedOrder.items || selectedOrder.items.length === 0">
+      <tr ng-if="selectedOrder.items.length === 0">
         <td colspan="4" class="text-center text-muted">
-          No items found in this order
+          No items found in this order<br>
+          <small>Debug: {{localStorage.getItem('cart') ? 'Cart exists' : 'No cart data'}}</small>
         </td>
       </tr>
     </tbody>
@@ -299,78 +290,100 @@
             
             // Find orders for return
             $scope.findOrders = function() {
-               console.log("Search criteria:", $scope.search);
-               console.log("LocalStorage currentOrder:", JSON.parse(localStorage.getItem('currentOrder')));
-               console.log("LocalStorage shippingData:", JSON.parse(localStorage.getItem('shippingData')));
-               console.log("LocalStorage cart:", JSON.parse(localStorage.getItem('cart')));
-               
-               if (!$scope.search.email && !$scope.search.orderNumber) {
-                  alert('Please enter either your email address or order number');
-                  return;
-               }
-               
-               // Clear previous results
-               $scope.orders = [];
-               $scope.selectedOrder = null;
-               
-               // Get order data from localStorage
-               const orderData = JSON.parse(localStorage.getItem('currentOrder')) || {};
-               const shippingData = JSON.parse(localStorage.getItem('shippingData')) || {};
-               const cart = JSON.parse(localStorage.getItem('cart')) || [];
-               
-               // Check if we have an order that matches the search criteria
-               if ((orderData.confirmation && $scope.search.orderNumber && 
-                    orderData.confirmation.includes($scope.search.orderNumber)) ||
-                  (shippingData.address && shippingData.address.email && 
-                   shippingData.address.email === $scope.search.email)) {
-                   
-                   // Format the order for display
-                   $scope.orders = [{
-                       orderId: orderData.confirmation || 'SCV-' + Date.now().toString().slice(-8),
-                       date: new Date(orderData.date || Date.now()),
-                       total: orderData.total || 0,
-                       items: cart.map(item => ({
-                           productId: 'prod-' + Math.floor(Math.random() * 1000000),
-                           name: item.name,
-                           price: item.price,
-                           quantity: item.quantity || 1,
-                           image: item.image || item.img || 'https://via.placeholder.com/60',
-                           category: item.category || item.desc || 'Fragrance'
-                       }))
-                   }];
-                   
-                   if ($scope.orders.length === 0) {
-                       alert('No orders found matching your criteria');
-                   }
-               } else {
-                   alert('No orders found matching your criteria');
-               }
-            };
-            
-            // Select an order
+  if (!$scope.search.email && !$scope.search.orderNumber) {
+    alert('Please enter either your email address or order number');
+    return;
+  }
+
+  // Clear previous results
+  $scope.orders = [];
+  $scope.selectedOrder = null;
+
+  // Get ALL possible order data from localStorage
+  const currentOrder = JSON.parse(localStorage.getItem('currentOrder')) || {};
+  const shippingData = JSON.parse(localStorage.getItem('shippingData')) || {};
+  const cart = JSON.parse(localStorage.getItem('cart')) || [];
+  const completeOrderData = JSON.parse(localStorage.getItem('completeOrderData')) || {};
+
+  console.log("Debug - Full localStorage data:", {
+    currentOrder,
+    shippingData,
+    cart,
+    completeOrderData
+  });
+
+  // Try to find matching order in all possible locations
+  let matchedOrder = null;
+  
+  // Check currentOrder first
+  if (currentOrder.confirmation && 
+      ($scope.search.orderNumber.includes(currentOrder.confirmation) || 
+       (shippingData.address && shippingData.address.email === $scope.search.email))) {
+    matchedOrder = currentOrder;
+  }
+  // Then check completeOrderData
+  else if (completeOrderData.order && 
+           ($scope.search.orderNumber.includes(completeOrderData.order.confirmationNumber) || 
+           completeOrderData.shopper.email === $scope.search.email) {
+    matchedOrder = completeOrderData.order;
+    matchedOrder.items = completeOrderData.cart || [];
+  }
+
+  if (matchedOrder) {
+    $scope.orders = [{
+      orderId: matchedOrder.confirmation || matchedOrder.confirmationNumber || 'SCV-' + Date.now().toString().slice(-8),
+      date: new Date(matchedOrder.date || Date.now()),
+      total: matchedOrder.total || 0,
+      items: matchedOrder.items || cart || [] // Fallback to cart if items not found
+    }];
+    
+    console.log("Debug - Matched Order:", $scope.orders[0]);
+  } else {
+    alert('No orders found matching your criteria');
+    console.log("Debug - No order matched search criteria");
+  }
+};
             $scope.selectOrder = function(order) {
-                console.log("Order selected:", order);
-                $scope.selectedOrder = angular.copy(order);
-                
-                // Ensure items array exists and has proper structure
-                $scope.selectedOrder.items = $scope.selectedOrder.items || [];
-                
-                // Initialize return properties for each item
-                $scope.selectedOrder.items.forEach(item => {
-                    item.selected = false;
-                    item.returnQty = item.quantity || 1;
-                    console.log("Processed item:", item);
-                });
-                
-                $scope.updateSelectedItems();
-            };
+  console.log("Debug - Raw order selected:", order);
 
-            $scope.processedReturns = JSON.parse(localStorage.getItem('processedReturns')) || [];
+               //select order
+  $scope.selectedOrder = {
+    orderId: order.orderId,
+    date: order.date,
+    total: order.total,
+    items: []
+  };
 
-            // Update selected items
-            $scope.updateSelectedItems = function() {
-                $scope.selectedItems = $scope.selectedOrder.items.filter(item => item.selected);
-            };
+  // Convert items to consistent format
+  if (order.items && order.items.length > 0) {
+    $scope.selectedOrder.items = order.items.map(item => ({
+      productId: item.productId || 'prod-' + Math.floor(Math.random() * 1000000),
+      name: item.name || 'Unnamed Product',
+      price: item.price || 0,
+      quantity: item.quantity || item.returnQty || 1,
+      image: item.image || item.img || 'https://via.placeholder.com/60',
+      category: item.category || item.desc || 'Fragrance',
+      selected: false,
+      returnQty: item.quantity || 1
+    }));
+  } 
+  // Handle case where items might be in different format
+  else if (order.cart && order.cart.length > 0) {
+    $scope.selectedOrder.items = order.cart.map(item => ({
+      productId: 'prod-' + Math.floor(Math.random() * 1000000),
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity || 1,
+      image: item.image || item.img || 'https://via.placeholder.com/60',
+      category: item.category || 'Fragrance',
+      selected: false,
+      returnQty: item.quantity || 1
+    }));
+  }
+
+  console.log("Debug - Processed order:", $scope.selectedOrder);
+  $scope.updateSelectedItems();
+};
             
             // Select return reason
             $scope.selectReason = function(reason) {
