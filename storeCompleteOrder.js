@@ -1,67 +1,57 @@
 // storeCompleteOrder.js
-
-
 (function() {
   try {
-    // 1. Get RAW data from localStorage
-    const rawCart = JSON.parse(localStorage.getItem('cart')) || [];
-    const rawShopper = JSON.parse(localStorage.getItem('shoppers'))?.slice(-1)[0] || {};
-    const rawShipping = JSON.parse(localStorage.getItem('shippingData')) || {};
-    
-    // 2. Transform cart items to consistent format
-    const orderItems = rawCart.map((item, index) => ({
-      id: `item-${Date.now()}-${index}`,
-      name: item.name || `Product ${index + 1}`,
-      price: Number(item.price) || 0,
-      quantity: Number(item.quantity) || 1,
-      image: item.image || item.img || 'https://via.placeholder.com/150',
-      category: item.category || item.desc || 'General'
-    }));
-    
-    // 3. Calculate totals
-    const subtotal = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const tax = subtotal * 0.06;
-    const shippingCost = Number(rawShipping.shipping) || 0;
-    const total = subtotal + tax + shippingCost;
-    
-    // 4. Build the COMPLETE order object
-    const completeOrder = {
-      id: `SCV-${Date.now().toString().slice(-8)}`,
-      date: new Date().toISOString(),
-      customer: {
-        ...rawShopper,
-        email: rawShipping.address?.email || rawShopper.email
+    // 1. Load all data pieces (unchanged)
+    const shopper = JSON.parse(localStorage.getItem("shoppers"))?.slice(-1)[0] || {};
+    const cart = JSON.parse(localStorage.getItem("cart")) || [];
+    const shipping = JSON.parse(localStorage.getItem("shippingData")) || {};
+    const paymentData = JSON.parse(localStorage.getItem("paymentData")) || {};
+    const currentOrder = JSON.parse(localStorage.getItem("currentOrder")) || {};
+    const returns = JSON.parse(localStorage.getItem("processedReturns")) || [];
+
+    // 2. Build the complete order object (unchanged)
+    const completeOrderData = {
+      shopper,
+      cart,
+      shipping,
+      billing: {
+        address: currentOrder.billing?.address || {},
+        payment: {
+          method: currentOrder.billing?.payment?.method || paymentData.method || "unknown",
+          cardLastFour: currentOrder.billing?.payment?.lastFour || 
+                       (paymentData.cardNumber ? paymentData.cardNumber.slice(-4) : "****")
+        }
       },
-      items: orderItems,
-      shipping: {
-        ...rawShipping,
-        cost: shippingCost
+      order: {
+        confirmationNumber: currentOrder.confirmation || "SCV-" + Date.now().toString().slice(-8),
+        date: currentOrder.date || new Date().toISOString(),
+        subtotal: currentOrder.subtotal || 0,
+        tax: currentOrder.tax || 0,
+        shippingCost: currentOrder.shippingCost || shipping.shipping || 0,
+        total: currentOrder.total || 0
       },
-      payment: {
-        method: 'credit', // Default
-        lastFour: '****' // Default
-      },
-      totals: {
-        subtotal,
-        tax,
-        shipping: shippingCost,
-        total
-      }
+      returns
     };
+
+    // 3. FIXED: PROPERLY HANDLE ORDER HISTORY
+    const orderHistory = JSON.parse(localStorage.getItem("orderHistory") || "[]");
     
-    // 5. Save to localStorage in MULTIPLE formats for compatibility
-    localStorage.setItem('completeOrderData', JSON.stringify(completeOrder));
-    localStorage.setItem('currentOrder', JSON.stringify(completeOrder));
-    
-    // 6. Add to order history
-    const history = JSON.parse(localStorage.getItem('orderHistory')) || [];
-    history.unshift(completeOrder);
-    localStorage.setItem('orderHistory', JSON.stringify(history.slice(0, 50))); // Keep last 50 orders
-    
-    console.log('✅ Order saved successfully!', completeOrder);
+    // Validate existing history is an array
+    if (!Array.isArray(orderHistory)) {
+      console.warn("Corrupted orderHistory - resetting");
+      localStorage.removeItem("orderHistory");
+      orderHistory = [];
+    }
+
+    // Add new order
+    orderHistory.push(completeOrderData);
+
+    // 4. Save with proper indentation for DevTools readability
+    localStorage.setItem("orderHistory", JSON.stringify(orderHistory, null, 2)); // 2-space indent
+    localStorage.setItem("completeOrderData", JSON.stringify(completeOrderData, null, 2));
+
+    console.log("✅ Order saved. Full history:", orderHistory);
   } catch (error) {
-    console.error('❌ Failed to save order:', error);
-    // Emergency backup of cart
-    localStorage.setItem('lastCartBackup', localStorage.getItem('cart'));
+    console.error("❌ Order save failed:", error);
   }
 })();
