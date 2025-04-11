@@ -222,12 +222,23 @@
         
        
            // Shopping cart functions
-           function addToCart(productName, price, imgSrc) {
-             let cart = JSON.parse(localStorage.getItem("cart")) || [];
-             cart.push({ name: productName, price: parseFloat(price), img: imgSrc });
-             localStorage.setItem("cart", JSON.stringify(cart));
+          function addToCart(productId) {
+  const cart = JSON.parse(localStorage.getItem("cart")) || [];
+  const product = storeData.data.products.find(p => p.id === productId);
+  
+  cart.push({
+    productId: product.id,
+    name: product.name,
+    price: product.price,
+    quantity: 1,
+    img: product.imageUrl
+  });
              alert("Product added to cart!");
-           }
+
+  localStorage.setItem("cart", JSON.stringify(cart));
+}
+            
+           
          
            // Product rendering function
            function renderProducts(products) {
