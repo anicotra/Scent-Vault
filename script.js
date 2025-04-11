@@ -157,36 +157,39 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
-function updateCart() {
-   const cartContainer = document.getElementById("cartItems");
-   let total = 0;
-   cartContainer.innerHTML = "";
+// Modern event-driven cart handler
+function addToCart(event) {
+  const button = event.currentTarget;
+  const product = {
+    id: button.dataset.id,
+    name: button.dataset.name,
+    price: parseFloat(button.dataset.price),
+    img: button.dataset.img,
+    quantity: 1
+  };
 
-   if (cart.length === 0) {
-      cartContainer.innerHTML = "<p>Your cart is empty.</p>";
-      document.getElementById("cartTotal").innerText = "0.00";
-      return;
-   }
+  let cart = JSON.parse(localStorage.getItem("cart")) || [];
+  
+  // Check if item already exists in cart
+  const existingItem = cart.find(item => item.id === product.id);
+  if (existingItem) {
+    existingItem.quantity += 1;
+  } else {
+    cart.push(product);
+  }
 
-   cart.forEach((item, index) => {
-      const quantity = item.quantity || 1;
-      const itemTotal = item.price * quantity;
-      total += itemTotal;
+  localStorage.setItem("cart", JSON.stringify(cart));
+  updateCartCount(); // Optional: Show item count in UI
+  alert(`${product.name} added to cart!`);
+}
 
-      cartContainer.innerHTML += `
-         <div class="cart-item" data-price="${item.price}">
-            <img src="${item.img}" alt="${item.name}">
-            <div class="cart-item-details">
-               <p><strong>${item.name}</strong></p>
-               <p>Unit Price: $${item.price.toFixed(2)}</p>
-               <p>Item Total: $<span id="itemTotal-${index}">${itemTotal.toFixed(2)}</span></p>
-               <input type="number" min="1" value="${quantity}" onchange="updateQuantity(${index}, this.value)">
-               <button class="btn btn-sm btn-danger mt-1" onclick="removeFromCart(${index})">Remove</button>
-            </div>
-         </div>`;
-   });
-
-   document.getElementById("cartTotal").innerText = total.toFixed(2);
+// Add this to show cart count (e.g., near cart icon)
+function updateCartCount() {
+  const cart = JSON.parse(localStorage.getItem("cart")) || [];
+  const countElement = document.getElementById("cart-count");
+  if (countElement) {
+    countElement.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+  }
 }
 
 
