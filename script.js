@@ -47,7 +47,48 @@ document.addEventListener("DOMContentLoaded", () => {
 
       showThankYou(event);
    });
-});
+}); 
+
+// Signup Handler
+function handleSignup(event) {
+  event.preventDefault();
+  
+  const userData = {
+    id: "shopper-" + Date.now(),
+    email: document.getElementById("signupEmail").value,
+    name: document.getElementById("signupName").value,
+    age: document.getElementById("signupAge").value,
+    address: document.getElementById("signupAddress").value,
+    phone: document.getElementById("signupPhone").value || null,
+    password: document.getElementById("signupPassword").value, // Note: In production, hash this!
+    orders: []
+  };
+
+  // Initialize or load existing data
+  let storeData = JSON.parse(localStorage.getItem("storeData")) || {
+    data: { shoppers: [], orders: [], products: [] }
+  };
+
+  // Check if email already exists
+  if (storeData.data.shoppers.some(user => user.email === userData.email)) {
+    alert("Email already registered!");
+    return;
+  }
+
+  // Save data
+  storeData.data.shoppers.push(userData);
+  localStorage.setItem("storeData", JSON.stringify(storeData));
+  localStorage.setItem("currentUser", JSON.stringify(userData));
+
+  alert("Registration successful!");
+  closeSignup();
+  showThankYou(); // Optional: Show thank-you message
+}
+function openSignup() {
+  document.getElementById('signupPopup').style.display = 'block';
+  document.getElementById('overlay').style.display = 'block';
+}
+
 
 document.getElementById('productForm').addEventListener('submit', function (event) {
    event.preventDefault();
