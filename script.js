@@ -47,48 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       showThankYou(event);
    });
-}); 
-
-// Signup Handler
-function handleSignup(event) {
-  event.preventDefault();
-  
-  const userData = {
-    id: "shopper-" + Date.now(),
-    email: document.getElementById("signupEmail").value,
-    name: document.getElementById("signupName").value,
-    age: document.getElementById("signupAge").value,
-    address: document.getElementById("signupAddress").value,
-    phone: document.getElementById("signupPhone").value || null,
-    password: document.getElementById("signupPassword").value, // Note: In production, hash this!
-    orders: []
-  };
-
-  // Initialize or load existing data
-  let storeData = JSON.parse(localStorage.getItem("storeData")) || {
-    data: { shoppers: [], orders: [], products: [] }
-  };
-
-  // Check if email already exists
-  if (storeData.data.shoppers.some(user => user.email === userData.email)) {
-    alert("Email already registered!");
-    return;
-  }
-
-  // Save data
-  storeData.data.shoppers.push(userData);
-  localStorage.setItem("storeData", JSON.stringify(storeData));
-  localStorage.setItem("currentUser", JSON.stringify(userData));
-
-  alert("Registration successful!");
-  closeSignup();
-  showThankYou(); // Optional: Show thank-you message
-}
-function openSignup() {
-  document.getElementById('signupPopup').style.display = 'block';
-  document.getElementById('overlay').style.display = 'block';
-}
-
+});
 
 document.getElementById('productForm').addEventListener('submit', function (event) {
    event.preventDefault();
@@ -157,39 +116,36 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
-// Modern event-driven cart handler
-function addToCart(event) {
-  const button = event.currentTarget;
-  const product = {
-    id: button.dataset.id,
-    name: button.dataset.name,
-    price: parseFloat(button.dataset.price),
-    img: button.dataset.img,
-    quantity: 1
-  };
+function updateCart() {
+   const cartContainer = document.getElementById("cartItems");
+   let total = 0;
+   cartContainer.innerHTML = "";
 
-  let cart = JSON.parse(localStorage.getItem("cart")) || [];
-  
-  // Check if item already exists in cart
-  const existingItem = cart.find(item => item.id === product.id);
-  if (existingItem) {
-    existingItem.quantity += 1;
-  } else {
-    cart.push(product);
-  }
+   if (cart.length === 0) {
+      cartContainer.innerHTML = "<p>Your cart is empty.</p>";
+      document.getElementById("cartTotal").innerText = "0.00";
+      return;
+   }
 
-  localStorage.setItem("cart", JSON.stringify(cart));
-  updateCartCount(); // Optional: Show item count in UI
-  alert(`${product.name} added to cart!`);
-}
+   cart.forEach((item, index) => {
+      const quantity = item.quantity || 1;
+      const itemTotal = item.price * quantity;
+      total += itemTotal;
 
-// Add this to show cart count (e.g., near cart icon)
-function updateCartCount() {
-  const cart = JSON.parse(localStorage.getItem("cart")) || [];
-  const countElement = document.getElementById("cart-count");
-  if (countElement) {
-    countElement.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
-  }
+      cartContainer.innerHTML += `
+         <div class="cart-item" data-price="${item.price}">
+            <img src="${item.img}" alt="${item.name}">
+            <div class="cart-item-details">
+               <p><strong>${item.name}</strong></p>
+               <p>Unit Price: $${item.price.toFixed(2)}</p>
+               <p>Item Total: $<span id="itemTotal-${index}">${itemTotal.toFixed(2)}</span></p>
+               <input type="number" min="1" value="${quantity}" onchange="updateQuantity(${index}, this.value)">
+               <button class="btn btn-sm btn-danger mt-1" onclick="removeFromCart(${index})">Remove</button>
+            </div>
+         </div>`;
+   });
+
+   document.getElementById("cartTotal").innerText = total.toFixed(2);
 }
 
 
