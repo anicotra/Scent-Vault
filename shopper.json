@@ -1,4 +1,4 @@
-const API_URL = "https://bkkrrhvcorrj-html.na.app.codingrooms.com/cart.html"
+const API_URL = "https://anicotra.github.io/Scent-Vault/confirmation.html"
 let cart = JSON.parse(localStorage.getItem("cart")) || []
 
 document.addEventListener("DOMContentLoaded", function () {
