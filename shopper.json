@@ -1,4 +1,4 @@
-const API_URL = "https://your-api-endpoint.com/orders";
+const API_URL = "https://your-api-endpoint.com/orders"; *ourwebsite*
 
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
