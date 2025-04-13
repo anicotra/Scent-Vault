@@ -1,68 +1,130 @@
-document.addEventListener("DOMContentLoaded", () => {
-   const form = document.querySelector("form");
+const API_URL = "https://your-api-endpoint.com/orders";
 
-   form.addEventListener("submit", (event) => {
-      event.preventDefault();
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-      const email = document.getElementById("email").value.trim();
-      const name = document.getElementById("Name").value.trim();
-      const phone = document.getElementById("phone").value.trim() || null;
-      const age = parseInt(document.getElementById("age").value);
-      const address = document.getElementById("address").value.trim();
+function updateCart() {
+   const cartTable = document.getElementById("cart-table");
+   const cartTotal = document.getElementById("cart-total");
+   cartTable.innerHTML = "";
 
-      const emailRegex = /^[^\s@
-      ]+@[^\s@
-      ]+\.[^\s@
-      ]+$/;
+   let total = 0;
 
-      if (!emailRegex.test(email)) {
-         alert("Please enter a valid email address.");
-         return;
-      }
+   cart.forEach((item, index) => {
+      const row = document.createElement("tr");
 
-      if (name.length < 2) {
-         alert("Please enter a valid name.");
-         return;
-      }
+      const nameCell = document.createElement("td");
+      nameCell.textContent = item.name;
+      row.appendChild(nameCell);
 
-      if (isNaN(age) || age <= 0) {
-         alert("Please enter a valid age.");
-         return;
-      }
+      const priceCell = document.createElement("td");
+      priceCell.textContent = `$${item.price.toFixed(2)}`;
+      row.appendChild(priceCell);
 
-      if (address === "") {
-         alert("Please enter your address.");
-         return;
-      }
+      const quantityCell = document.createElement("td");
+      quantityCell.textContent = item.quantity;
+      row.appendChild(quantityCell);
 
-      const shopper = {
-         email,
-         name,
-         phone,
-         age,
-         address
-      };
+      const totalCell = document.createElement("td");
+      const itemTotal = item.price * item.quantity;
+      totalCell.textContent = `$${itemTotal.toFixed(2)}`;
+      row.appendChild(totalCell);
 
-      let shoppers = localStorage.getItem("shoppers");
-      shoppers = shoppers ? JSON.parse(shoppers) : [];
+      const removeCell = document.createElement("td");
+      const removeBtn = document.createElement("button");
+      removeBtn.textContent = "Remove";
+      removeBtn.classList.add("btn", "btn-danger", "btn-sm");
+      removeBtn.onclick = () => removeFromCart(index);
+      removeCell.appendChild(removeBtn);
+      row.appendChild(removeCell);
 
-      const existingShopper = shoppers.find((s) => s.email === email);
-      if (existingShopper) {
-         alert("This email is already registered.");
-         return;
-      }
-
-      shoppers.push(shopper);
-      localStorage.setItem("shoppers", JSON.stringify(shoppers));
-
-      alert("Shopper information saved successfully!");
-
-      form.reset();
-
-      showThankYou();
+      cartTable.appendChild(row);
+      total += itemTotal;
    });
-});
 
-function showThankYou() {
-   alert("Thank you for registering!");
+   cartTotal.textContent = `$${total.toFixed(2)}`;
 }
+
+function removeFromCart(index) {
+   cart.splice(index, 1);
+   localStorage.setItem("cart", JSON.stringify(cart));
+   updateCart();
+}
+
+function addToCart(item) {
+   const existing = cart.find(i => i.name === item.name);
+   if (existing) {
+      existing.quantity += item.quantity;
+   } else {
+      cart.push(item);
+   }
+   localStorage.setItem("cart", JSON.stringify(cart));
+   updateCart();
+}
+
+function generateConfirmationNumber() {
+   const timestamp = Date.now().toString(36);
+   const randomStr = Math.random().toString(36).substring(2, 6);
+   return `ORD-${timestamp}-${randomStr.toUpperCase()}`;
+}
+
+function prepareCartPayload(confirmationNumber) {
+   const user = JSON.parse(localStorage.getItem("user")) || {};
+
+   const cartItems = cart.map((item) => ({
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      image: item.image
+   }));
+
+   const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+   return {
+      confirmationNumber: confirmationNumber,
+      user: {
+         email: user.email || null,
+         name: user.name || null,
+         age: user.age || null,
+         phone: user.phone || null,
+         address: user.address || null
+      },
+      cartItems: cartItems,
+      totalPrice: totalPrice
+   };
+}
+
+function submitOrder() {
+   if (cart.length === 0) {
+      alert("Your cart is empty. Please add items before checking out.");
+      return;
+   }
+
+   const confirmationNumber = generateConfirmationNumber();
+   const payload = prepareCartPayload(confirmationNumber);
+
+   let orders = JSON.parse(localStorage.getItem("orders")) || [];
+   orders.push(payload);
+   localStorage.setItem("orders", JSON.stringify(orders));
+
+   $.ajax({
+      url: API_URL,
+      method: "POST",
+      contentType: "application/json",
+      data: JSON.stringify(payload),
+      success: function (response) {
+         alert(`Order submitted successfully! Confirmation #: ${confirmationNumber}`);
+         localStorage.removeItem("cart");
+         cart = [];
+         updateCart();
+         console.log("Server Response:", response);
+      },
+      error: function (xhr, status, error) {
+         alert("Order submission failed. Please try again.");
+         console.error("Error:", xhr.responseText);
+      }
+   });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+   updateCart();
+});
