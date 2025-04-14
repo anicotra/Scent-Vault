@@ -1,458 +1,320 @@
 <!DOCTYPE html>
 <html lang="en" ng-app="returnsApp">
-
 <head>
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>Returns Center | Scent Vault</title>
-   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-   <link rel="stylesheet" href="style.css">
-   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
-   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-   <style>
-      .order-card {
-         padding: 15px;
-         margin-bottom: 10px;
-         border: 1px solid #ddd;
-         border-radius: 5px;
-         cursor: pointer;
-      }
-      .order-card.selected {
-         border-color: #0d6efd;
-         background-color: #f8f9fa;
-      }
-      .reason-option {
-         padding: 10px 15px;
-         margin: 5px;
-         border: 1px solid #ddd;
-         border-radius: 5px;
-         cursor: pointer;
-      }
-      .reason-option.selected {
-         border-color: #0d6efd;
-         background-color: #f8f9fa;
-      }
-      .product-img {
-         width: 60px;
-         height: 60px;
-         object-fit: cover;
-         border-radius: 4px;
-      }
-      .table th {
-         font-weight: 600;
-         border-bottom: 2px solid #dee2e6;
-      }
-   </style>
-</head>
-
-<body ng-controller="ReturnsController">
-   <div class="container py-4">
-      <div class="returns-container">
-         <h2 class="mb-4">Returns Center</h2>
-
-         <!-- Debug Button -->
-         <button class="btn btn-info mb-3" ng-click="debugMode = !debugMode">
-            Toggle Debug Mode
-         </button>
-
-         <!--find order-->
-         <div class="mb-5" ng-show="currentStep == 1">
-            <h4 class="mb-3">Find Your Order</h4>
-            <div class="alert alert-info">
-               <p>Please enter either your email address <strong>or</strong> order number to look up your order.</p>
-            </div>
-            <div class="row mb-4">
-               <div class="col-md-6">
-                  <label for="orderEmail" class="form-label">Email Address</label>
-                  <input type="email" class="form-control" id="orderEmail" ng-model="search.email" placeholder="your@email.com">
-               </div>
-               <div class="col-md-6">
-                  <label for="orderNumber" class="form-label">Order Number</label>
-                  <input type="text" class="form-control" id="orderNumber" ng-model="search.orderNumber" placeholder="SCV-12345678">
-               </div>
-            </div>
-            <button class="btn btn-primary" ng-click="findOrders()">Find Orders</button>
-            <a href="index.html" class="btn btn-outline-secondary home-button"><i class="bi bi-house-door"></i> Back to Home
-            </a>
-
-            <div class="mt-4" ng-show="orders.length > 0">
-               <h5 class="mb-3">Select an Order to Return Items From:</h5>
-               <div class="order-card" ng-repeat="order in orders" ng-click="selectOrder(order)"
-                  ng-class="{'selected': selectedOrder.orderId == order.orderId}">
-                  <div class="d-flex justify-content-between">
-                     <div>
-                        <h5>Order #{{order.orderId}}</h5>
-                        <p class="mb-1">Placed on {{order.date | date: 'mediumDate'}}</p>
-                        <p class="mb-1">Total: ${{order.total.toFixed(2)}}</p>
-                     </div>
-                     <div>
-                        <span class="badge bg-secondary">{{order.items.length}} items</span>
-                     </div>
-                  </div>
-               </div>
-            </div>
-
-            <div class="mt-3" ng-show="orders.length > 0 && selectedOrder">
-               <button class="btn btn-primary" ng-click="nextStep()">Continue With Selected Order</button>
-            </div>
-         </div>
-
-         <!--select Items-->
-         <div class="mb-5" ng-show="currentStep == 2">
-            <h4 class="mb-3">Select Items to Return</h4>
-            <p>Order #{{selectedOrder.orderId}} - Placed on {{selectedOrder.date | date: 'mediumDate'}}</p>
-
-            <div class="table-responsive" ng-if="currentStep == 2">
-            <div class="table-responsive" ng-if="currentStep == 2 && selectedOrder">
-  <table class="table">
-    <thead>
-      <tr>
-        <th></th>
-        <th>Product</th>
-        <th>Price</th>
-        <th>Quantity</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr ng-if="debugMode">
-        <td colspan="4" class="text-danger">
-          Debug Info - Items: {{selectedOrder.items.length}}<br>
-          First Item: {{selectedOrder.items[0] | json}}<br>
-          LocalStorage Cart: {{(JSON.parse(localStorage.getItem('cart')) || []).length}} items
-        </td>
-      </tr>
-      
-      <tr ng-repeat="item in selectedOrder.items track by $index">
-        <td><input type="checkbox" ng-model="item.selected"></td>
-        <td>
-          <img ng-src="{{item.image}}" style="width:50px;height:50px;object-fit:cover;margin-right:10px;">
-          {{item.name}}
-        </td>
-        <td>${{item.price.toFixed(2)}}</td>
-        <td>
-          <select class="form-select" ng-model="item.returnQty" 
-                  ng-options="n for n in [] | range:1:item.quantity">
-          </select>
-        </td>
-      </tr>
-      
-      <tr ng-if="selectedOrder.items.length === 0">
-        <td colspan="4" class="text-center text-muted">
-          No items found in this order<br>
-          <small>Debug: {{localStorage.getItem('cart') ? 'Cart exists' : 'No cart data'}}</small>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-            <div class="d-flex justify-content-between mt-3">
-               <button class="btn btn-outline-secondary" ng-click="prevStep()">Back</button>
-               <button class="btn btn-primary" ng-disabled="selectedItems.length == 0" ng-click="nextStep()">Continue</button>
-            </div>
-         </div>
-
-         <!--return reason-->
-         <div class="mb-5" ng-show="currentStep == 3">
-            <h4 class="mb-3">Return Reason</h4>
-            <p>Please tell us why you're returning these items:</p>
-
-            <div class="d-flex flex-wrap mb-4">
-               <div class="reason-option" ng-repeat="reason in returnReasons" ng-click="selectReason(reason)"
-                  ng-class="{'selected': returnData.reason == reason.value}">
-                  {{reason.label}}
-               </div>
-            </div>
-
-            <div class="mb-4" ng-show="returnData.reason == 'other'">
-               <label for="returnDetails" class="form-label">Please provide details</label>
-               <textarea class="form-control" id="returnDetails" rows="3" ng-model="returnData.details"></textarea>
-            </div>
-            <div class="d-flex justify-content-between mt-3">
-               <button class="btn btn-outline-secondary" ng-click="prevStep()">Back</button>
-               <button class="btn btn-primary" ng-click="nextStep()">Continue</button>
-            </div>
-         </div>
-
-         <!--review and submit-->
-         <div ng-show="currentStep == 4">
-            <h4 class="mb-3">Review Your Return</h4>
-
-            <div class="mb-4">
-               <h5>Items Being Returned:</h5>
-               <div class="table-responsive">
-                  <table class="table">
-                     <thead>
-                        <tr>
-                           <th>Product</th>
-                           <th>Quantity</th>
-                           <th>Refund Amount</th>
-                        </tr>
-                     </thead>
-                     <tbody>
-                        <tr ng-repeat="item in selectedItems">
-                           <td>
-                              <div class="d-flex align-items-center">
-                                 <img ng-src="{{item.image || item.img || 'https://via.placeholder.com/60'}}" alt="{{item.name}}" class="product-img me-3">
-                                 <div>
-                                    <h6 class="mb-1">{{item.name}}</h6>
-                                    <small class="text-muted">{{item.category || item.desc || 'Fragrance'}}</small>
-                                 </div>
-                              </div>
-                           </td>
-                           <td>{{item.returnQty}}</td>
-                           <td>${{(item.price * item.returnQty).toFixed(2)}}</td>
-                        </tr>
-                     </tbody>
-                  </table>
-               </div>
-               <div class="text-end">
-                  <p class="mb-1">Subtotal: ${{calculateRefundSubtotal().toFixed(2)}}</p>
-                  <p class="mb-1">Tax: ${{(calculateRefundSubtotal() * 0.06).toFixed(2)}}</p>
-                  <h5>Total Refund: ${{calculateTotalRefund().toFixed(2)}}</h5>
-               </div>
-            </div>
-
-            <div class="mb-4">
-               <h5>Return Reason:</h5>
-               <p>{{getReasonLabel(returnData.reason)}}</p>
-               <p ng-show="returnData.details">{{returnData.details}}</p>
-            </div>
-            <div class="mb-4">
-               <h5>Return Method:</h5>
-               <div class="alert alert-info">
-                  <p>A prepaid return shipping label will be emailed to you.</p>
-                  <p>Please pack items securely and ship within 14 days.</p>
-               </div>
-            </div>
-
-            <div class="d-flex justify-content-between mt-4">
-               <button class="btn btn-outline-secondary" ng-click="prevStep()">Back</button>
-               <button class="btn btn-primary" ng-click="submitReturn()">Submit Return Request</button>
-            </div>
-         </div>
-      </div>
-   </div>
-
-   <script>
-      angular.module('returnsApp', [])
-        .filter('range', function() {
-            return function(input, min, max) {
-                min = parseInt(min);
-                max = parseInt(max);
-                for (var i=min; i<=max; i++)
-                    input.push(i);
-                return input;
-            };
-        })
-        .controller('ReturnsController', ['$scope', '$http', function($scope, $http) {
-            // Initialize data
-            $scope.currentStep = 1;
-            $scope.debugMode = false;
-            $scope.search = {
-                email: '',
-                orderNumber: ''
-            };
-
-           $scope.getDisplayItems = function() {
-    if (!$scope.selectedOrder || !$scope.selectedOrder.items) return [];
-    
-    // Handle both array and object formats
-    if (Array.isArray($scope.selectedOrder.items)) {
-      return $scope.selectedOrder.items;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Returns Center | Scent Vault</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+  <style>
+    .order-card {
+      padding: 15px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      cursor: pointer;
     }
-    
-    // Convert object to array if needed
-    return Object.keys($scope.selectedOrder.items).map(function(key) {
-      return $scope.selectedOrder.items[key];
-    });
-  };
+    .order-card.selected {
+      border-color: #0d6efd;
+      background-color: #f8f9fa;
+    }
+    .reason-option {
+      padding: 10px 15px;
+      margin: 5px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .reason-option.selected {
+      border-color: #0d6efd;
+      background-color: #f8f9fa;
+    }
+    .product-img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+    .table th {
+      font-weight: 600;
+      border-bottom: 2px solid #dee2e6;
+    }
+  </style>
+</head>
+<body ng-controller="ReturnsController">
+  <div class="container py-4">
+    <div class="returns-container">
+      <h2 class="mb-4">Returns Center</h2>
 
-  $scope.getItemImage = function(item) {
-    return item.image || item.img || 'https://via.placeholder.com/60?text=No+Image';
-  };
-           
-            $scope.orders = [];
-            $scope.selectedOrder = null;
-            $scope.selectedItems = [];
-            $scope.returnReasons = [
-                { value: 'wrong-item', label: 'Wrong Item Received' },
-                { value: 'defective', label: 'Defective/Damaged' },
-                { value: 'not-as-described', label: 'Not As Described' },
-                { value: 'no-longer-needed', label: 'No Longer Needed' },
-                { value: 'better-price', label: 'Found Better Price' },
-                { value: 'other', label: 'Other Reason' }
-            ];
-            $scope.returnData = {
-                reason: '',
-                details: ''
-            };
-            
-            // Find orders for return
-            $scope.findOrders = function() {
-  if (!$scope.search.email && !$scope.search.orderNumber) {
-    alert('Please enter either your email address or order number');
-    return;
-  }
+      <div class="mb-5" ng-show="currentStep == 1">
+        <h4 class="mb-3">Find Your Order</h4>
+        <div class="alert alert-info">
+          <p>Please enter either your email address <strong>or</strong> order number to look up your order.</p>
+        </div>
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <label for="orderEmail" class="form-label">Email Address</label>
+            <input type="email" class="form-control" id="orderEmail" ng-model="search.email" placeholder="your@email.com">
+          </div>
+          <div class="col-md-6">
+            <label for="orderNumber" class="form-label">Order Number</label>
+            <input type="text" class="form-control" id="orderNumber" ng-model="search.orderNumber" placeholder="SCV-12345678">
+          </div>
+        </div>
+        <button class="btn btn-primary" ng-click="findOrders()">Find Orders</button>
+        <a href="index.html" class="btn btn-outline-secondary">Back to Home</a>
 
-  // Clear previous results
-  $scope.orders = [];
-  $scope.selectedOrder = null;
+        <div class="mt-4" ng-show="orders.length > 0">
+          <h5 class="mb-3">Select an Order to Return Items From:</h5>
+          <div class="order-card" ng-repeat="order in orders" ng-click="selectOrder(order)" ng-class="{'selected': selectedOrder.orderId == order.orderId}">
+            <div class="d-flex justify-content-between">
+              <div>
+                <h5>Order #{{order.orderId}}</h5>
+                <p class="mb-1">Placed on {{order.date | date:'mediumDate'}}</p>
+                <p class="mb-1">Total: ${{order.total.toFixed(2)}}</p>
+              </div>
+              <div>
+                <span class="badge bg-secondary">{{order.items.length}} items</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
-  // Get ALL possible order data from localStorage
-  const currentOrder = JSON.parse(localStorage.getItem('currentOrder')) || {};
-  const shippingData = JSON.parse(localStorage.getItem('shippingData')) || {};
-  const cart = JSON.parse(localStorage.getItem('cart')) || [];
-  const completeOrderData = JSON.parse(localStorage.getItem('completeOrderData')) || {};
+        <div class="mt-3" ng-show="orders.length > 0 && selectedOrder">
+          <button class="btn btn-primary" ng-click="nextStep()">Continue With Selected Order</button>
+        </div>
+      </div>
 
-  console.log("Debug - Full localStorage data:", {
-    currentOrder,
-    shippingData,
-    cart,
-    completeOrderData
-  });
+      <div class="mb-5" ng-show="currentStep == 2">
+        <h4 class="mb-3">Select Items to Return</h4>
+        <p>Order #{{selectedOrder.orderId}} - Placed on {{selectedOrder.date | date:'mediumDate'}}</p>
 
-  // Try to find matching order in all possible locations
-  let matchedOrder = null;
-  
-  // Check currentOrder first
-  if (currentOrder.confirmation && 
-      ($scope.search.orderNumber.includes(currentOrder.confirmation) || 
-       (shippingData.address && shippingData.address.email === $scope.search.email))) {
-    matchedOrder = currentOrder;
-  }
-  // Then check completeOrderData
-  else if (completeOrderData.order && 
-           ($scope.search.orderNumber.includes(completeOrderData.order.confirmationNumber) || 
-           completeOrderData.shopper.email === $scope.search.email) {
-    matchedOrder = completeOrderData.order;
-    matchedOrder.items = completeOrderData.cart || [];
-  }
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Product</th>
+                <th>Price</th>
+                <th>Quantity</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr ng-repeat="item in selectedOrder.items">
+                <td><input type="checkbox" ng-model="item.selected" ng-change="updateSelectedItems()"></td>
+                <td>
+                  <img ng-src="{{item.image}}" class="product-img me-2">
+                  {{item.name}}
+                </td>
+                <td>${{item.price.toFixed(2)}}</td>
+                <td>
+                  <select class="form-select" ng-model="item.returnQty" ng-options="n for n in [].constructor(item.quantity) track by n">
+                  </select>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-  if (matchedOrder) {
-    $scope.orders = [{
-      orderId: matchedOrder.confirmation || matchedOrder.confirmationNumber || 'SCV-' + Date.now().toString().slice(-8),
-      date: new Date(matchedOrder.date || Date.now()),
-      total: matchedOrder.total || 0,
-      items: matchedOrder.items || cart || [] // Fallback to cart if items not found
-    }];
-    
-    console.log("Debug - Matched Order:", $scope.orders[0]);
-  } else {
-    alert('No orders found matching your criteria');
-    console.log("Debug - No order matched search criteria");
-  }
-};
-            $scope.selectOrder = function(order) {
-  console.log("Debug - Raw order selected:", order);
+        <div class="d-flex justify-content-between mt-3">
+          <button class="btn btn-outline-secondary" ng-click="prevStep()">Back</button>
+          <button class="btn btn-primary" ng-disabled="selectedItems.length == 0" ng-click="nextStep()">Continue</button>
+        </div>
+      </div>
 
-               //select order
-  $scope.selectedOrder = {
-    orderId: order.orderId,
-    date: order.date,
-    total: order.total,
-    items: []
-  };
+      <div class="mb-5" ng-show="currentStep == 3">
+        <h4 class="mb-3">Return Reason</h4>
+        <p>Please tell us why you're returning these items:</p>
+        <div class="d-flex flex-wrap mb-4">
+          <div class="reason-option" ng-repeat="reason in returnReasons" ng-click="selectReason(reason)" ng-class="{'selected': returnData.reason == reason.value}">
+            {{reason.label}}
+          </div>
+        </div>
+        <div class="mb-4" ng-show="returnData.reason == 'other'">
+          <label for="returnDetails" class="form-label">Please provide details</label>
+          <textarea class="form-control" id="returnDetails" rows="3" ng-model="returnData.details"></textarea>
+        </div>
+        <div class="d-flex justify-content-between mt-3">
+          <button class="btn btn-outline-secondary" ng-click="prevStep()">Back</button>
+          <button class="btn btn-primary" ng-click="nextStep()">Continue</button>
+        </div>
+      </div>
 
-  // Convert items to consistent format
-  if (order.items && order.items.length > 0) {
-    $scope.selectedOrder.items = order.items.map(item => ({
-      productId: item.productId || 'prod-' + Math.floor(Math.random() * 1000000),
-      name: item.name || 'Unnamed Product',
-      price: item.price || 0,
-      quantity: item.quantity || item.returnQty || 1,
-      image: item.image || item.img || 'https://via.placeholder.com/60',
-      category: item.category || item.desc || 'Fragrance',
-      selected: false,
-      returnQty: item.quantity || 1
-    }));
-  } 
-  // Handle case where items might be in different format
-  else if (order.cart && order.cart.length > 0) {
-    $scope.selectedOrder.items = order.cart.map(item => ({
-      productId: 'prod-' + Math.floor(Math.random() * 1000000),
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity || 1,
-      image: item.image || item.img || 'https://via.placeholder.com/60',
-      category: item.category || 'Fragrance',
-      selected: false,
-      returnQty: item.quantity || 1
-    }));
-  }
+      <div ng-show="currentStep == 4">
+        <h4 class="mb-3">Review Your Return</h4>
+        <div class="mb-4">
+          <h5>Items Being Returned:</h5>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Refund Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr ng-repeat="item in selectedItems">
+                <td>{{item.name}}</td>
+                <td>{{item.returnQty}}</td>
+                <td>${{(item.price * item.returnQty).toFixed(2)}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="text-end">
+          <p class="mb-1">Subtotal: ${{calculateRefundSubtotal().toFixed(2)}}</p>
+          <p class="mb-1">Tax: ${{(calculateRefundSubtotal() * 0.06).toFixed(2)}}</p>
+          <h5>Total Refund: ${{calculateTotalRefund().toFixed(2)}}</h5>
+        </div>
+        <div class="mb-4">
+          <h5>Return Reason:</h5>
+          <p>{{getReasonLabel(returnData.reason)}}</p>
+          <p ng-show="returnData.details">{{returnData.details}}</p>
+        </div>
+        <div class="d-flex justify-content-between mt-4">
+          <button class="btn btn-outline-secondary" ng-click="prevStep()">Back</button>
+          <button class="btn btn-primary" ng-click="submitReturn()">Submit Return Request</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  console.log("Debug - Processed order:", $scope.selectedOrder);
-  $scope.updateSelectedItems();
-};
-            
-            // Select return reason
-            $scope.selectReason = function(reason) {
-                $scope.returnData.reason = reason.value;
-                if (reason.value !== 'other') {
-                    $scope.returnData.details = '';
-                }
-            };
-            
-            // Get reason label
-            $scope.getReasonLabel = function(value) {
-                const reason = $scope.returnReasons.find(r => r.value === value);
-                return reason ? reason.label : '';
-            };
-            
-            // Calculate refund amounts
-            $scope.calculateRefundSubtotal = function() {
-                return $scope.selectedItems.reduce((sum, item) => sum + (item.price * item.returnQty), 0);
-            };
-            
-            $scope.calculateTotalRefund = function() {
-                const subtotal = $scope.calculateRefundSubtotal();
-                return subtotal + (subtotal * 0.06); // Including tax
-            };
-            
-            // Navigation
-            $scope.nextStep = function() {
-                $scope.currentStep++;
-            };
-            
-            $scope.prevStep = function() {
-                $scope.currentStep--;
-            };
-            
-            // Submit return
-            $scope.submitReturn = function() {
-            if (!$scope.returnData.reason) {
-            alert('Please select a return reason');
-            return;
-            }
-            
-            const returnRequest = {
-               orderId: $scope.selectedOrder.orderId,
-               customerEmail: $scope.search.email,
-               items: $scope.selectedItems.map(item => ({
-               productId: item.productId,
-               name: item.name,
-               quantity: item.returnQty,
-               price: item.price
-            })),
-               reason: $scope.returnData.reason,
-               details: $scope.returnData.details,
-               refundAmount: $scope.calculateTotalRefund(),
-               status: 'pending'
-               };
-            
-            // Store the processed return
-            $scope.processedReturns.push(returnRequest);
-            localStorage.setItem('processedReturns', JSON.stringify($scope.processedReturns));
-            
-            alert('Return request submitted successfully!\n\nYou will be redirected to the home page.');
-            
-            // Redirect to home page after 2 seconds
-            setTimeout(function() {
-               window.location.href = 'index.html';
-            }, 2000);
-            };
-        }]);
-   </script>
+  <script>
+    angular.module('returnsApp', [])
+    .controller('ReturnsController', ['$scope', function($scope) {
+      $scope.currentStep = 1;
+      $scope.search = { email: '', orderNumber: '' };
+      $scope.orders = [];
+      $scope.selectedOrder = null;
+      $scope.selectedItems = [];
+      $scope.returnData = { reason: '', details: '' };
+      $scope.returnReasons = [
+        { value: 'wrong-item', label: 'Wrong Item Received' },
+        { value: 'defective', label: 'Defective/Damaged' },
+        { value: 'not-as-described', label: 'Not As Described' },
+        { value: 'no-longer-needed', label: 'No Longer Needed' },
+        { value: 'better-price', label: 'Found Better Price' },
+        { value: 'other', label: 'Other Reason' }
+      ];
+      $scope.processedReturns = JSON.parse(localStorage.getItem('processedReturns')) || [];
+
+      $scope.findOrders = function() {
+        if (!$scope.search.email && !$scope.search.orderNumber) {
+          alert('Please enter either your email address or order number');
+          return;
+        }
+
+        const emailInput = ($scope.search.email || '').trim().toLowerCase();
+        const orderInput = ($scope.search.orderNumber || '').trim();
+
+        const currentOrder = JSON.parse(localStorage.getItem('currentOrder')) || {};
+        const shippingData = JSON.parse(localStorage.getItem('shippingData')) || {};
+        const completeOrderData = JSON.parse(localStorage.getItem('completeOrderData')) || {};
+
+        let matchedOrder = null;
+
+        const matchEmail = (data) =>
+          data?.shopper?.email?.toLowerCase() === emailInput ||
+          data?.shipping?.email?.toLowerCase() === emailInput ||
+          shippingData?.address?.email?.toLowerCase() === emailInput;
+
+        const matchConfirm = (data) =>
+          data?.confirmation === orderInput ||
+          data?.confirmationNumber === orderInput;
+
+        if (matchEmail(completeOrderData) || matchConfirm(completeOrderData.order)) {
+          matchedOrder = {
+            orderId: completeOrderData.order.confirmationNumber,
+            date: completeOrderData.order.date,
+            total: completeOrderData.order.total,
+            items: completeOrderData.cart || []
+          };
+        } else if (matchEmail(currentOrder) || matchConfirm(currentOrder)) {
+          matchedOrder = {
+            orderId: currentOrder.confirmation,
+            date: currentOrder.date,
+            total: currentOrder.total,
+            items: currentOrder.items || JSON.parse(localStorage.getItem('cart')) || []
+          };
+        }
+
+        if (matchedOrder) {
+          $scope.orders = [matchedOrder];
+        } else {
+          alert('No orders found matching your criteria.');
+        }
+      };
+
+      $scope.selectOrder = function(order) {
+        $scope.selectedOrder = {
+          orderId: order.orderId,
+          date: new Date(order.date),
+          total: order.total,
+          items: order.items.map(item => ({
+            ...item,
+            returnQty: item.quantity || 1,
+            selected: false
+          }))
+        };
+        $scope.updateSelectedItems();
+      };
+
+      $scope.updateSelectedItems = function() {
+        $scope.selectedItems = $scope.selectedOrder.items.filter(i => i.selected);
+      };
+
+      $scope.selectReason = function(reason) {
+        $scope.returnData.reason = reason.value;
+        if (reason.value !== 'other') {
+          $scope.returnData.details = '';
+        }
+      };
+
+      $scope.getReasonLabel = function(value) {
+        const match = $scope.returnReasons.find(r => r.value === value);
+        return match ? match.label : '';
+      };
+
+      $scope.calculateRefundSubtotal = function() {
+        return $scope.selectedItems.reduce((sum, item) => sum + (item.price * item.returnQty), 0);
+      };
+
+      $scope.calculateTotalRefund = function() {
+        const subtotal = $scope.calculateRefundSubtotal();
+        return subtotal + subtotal * 0.06;
+      };
+
+      $scope.nextStep = function() {
+        $scope.currentStep++;
+      };
+
+      $scope.prevStep = function() {
+        $scope.currentStep--;
+      };
+
+      $scope.submitReturn = function() {
+        if (!$scope.returnData.reason) {
+          alert('Please select a return reason.');
+          return;
+        }
+
+        const returnRecord = {
+          orderId: $scope.selectedOrder.orderId,
+          customerEmail: $scope.search.email,
+          items: $scope.selectedItems,
+          reason: $scope.returnData.reason,
+          details: $scope.returnData.details,
+          refundAmount: $scope.calculateTotalRefund(),
+          submittedAt: new Date().toISOString()
+        };
+
+        $scope.processedReturns.push(returnRecord);
+        localStorage.setItem('processedReturns', JSON.stringify($scope.processedReturns));
+
+        alert('Return submitted successfully!');
+        setTimeout(() => window.location.href = 'index.html', 1500);
+      };
+    }]);
+  </script>
 </body>
-
 </html>
