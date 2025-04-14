@@ -1,0 +1,154 @@
+const API_URL = "https://anicotra.github.io/Scent-Vault/confirmation.html"
+let cart = JSON.parse(localStorage.getItem("cart")) || []
+
+document.addEventListener("DOMContentLoaded", function () {
+  updateCart()
+  showOrderHistory()
+})
+
+function updateCart() {
+  const cartContainer = document.getElementById("cartItems")
+  let total = 0
+  cartContainer.innerHTML = ""
+
+  if (cart.length === 0) {
+    cartContainer.innerHTML = "<p>Your cart is empty.</p>"
+    document.getElementById("cartTotal").innerText = "0.00"
+    return
+  }
+
+  cart.forEach((item, index) => {
+    const quantity = item.quantity || 1
+    const itemTotal = item.price * quantity
+    total += itemTotal
+
+    cartContainer.innerHTML += `
+      <div class="cart-item" data-price="${item.price}">
+        <img src="${item.img}" alt="${item.name}">
+        <div class="cart-item-details">
+          <p><strong>${item.name}</strong></p>
+          <p>Unit Price: $${item.price.toFixed(2)}</p>
+          <p>Item Total: $<span id="itemTotal-${index}">${itemTotal.toFixed(2)}</span></p>
+          <input type="number" min="1" value="${quantity}" onchange="updateQuantity(${index}, this.value)">
+          <button class="btn btn-sm btn-danger mt-1" onclick="removeFromCart(${index})">Remove</button>
+        </div>
+      </div>`
+  })
+
+  document.getElementById("cartTotal").innerText = total.toFixed(2)
+}
+
+function updateQuantity(index, quantity) {
+  quantity = Math.max(1, parseInt(quantity))
+  cart[index].quantity = quantity
+  localStorage.setItem("cart", JSON.stringify(cart))
+
+  const itemTotal = cart[index].price * quantity
+  const itemTotalElement = document.getElementById(`itemTotal-${index}`)
+  if (itemTotalElement) {
+    itemTotalElement.innerText = itemTotal.toFixed(2)
+  }
+
+  updateCart()
+}
+
+function removeFromCart(index) {
+  cart.splice(index, 1)
+  localStorage.setItem("cart", JSON.stringify(cart))
+  updateCart()
+}
+
+function clearCart() {
+  localStorage.removeItem("cart")
+  cart = []
+  updateCart()
+}
+
+function prepareCartPayload() {
+  const user = JSON.parse(localStorage.getItem("shoppers"))?.slice(-1)[0] || {
+    email: "guest@example.com",
+    name: "Guest",
+    age: 0,
+    phone: null,
+    address: "Unknown"
+  }
+
+  const totalPrice = cart.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0)
+
+  return {
+    confirmationNumber: generateConfirmationNumber(),
+    user,
+    cartItems: cart.map(item => ({
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity || 1,
+      image: item.img
+    })),
+    totalPrice,
+    date: new Date().toLocaleString()
+  }
+}
+
+function submitOrder() {
+  if (cart.length === 0) {
+    alert("Your cart is empty. Please add items before checking out.")
+    return
+  }
+
+  const payload = prepareCartPayload()
+
+  $.ajax({
+    url: API_URL,
+    method: "POST",
+    contentType: "application/json",
+    data: JSON.stringify(payload),
+    success: function (response) {
+      alert("Order submitted successfully!")
+
+      let orders = JSON.parse(localStorage.getItem("orders")) || []
+      orders.push(payload)
+      localStorage.setItem("orders", JSON.stringify(orders))
+
+      localStorage.removeItem("cart")
+      cart = []
+      updateCart()
+      showOrderHistory()
+      console.log("Server Response:", response)
+    },
+    error: function (xhr, status, error) {
+      alert("Order submission failed. Try again later.")
+      console.error("Error:", xhr.responseText)
+    }
+  })
+}
+
+function generateConfirmationNumber() {
+  return "CONF-" + Math.floor(100000 + Math.random() * 900000)
+}
+
+function showOrderHistory() {
+  const container = document.getElementById("orderHistory")
+  if (!container) return
+
+  const orders = JSON.parse(localStorage.getItem("orders")) || []
+
+  if (orders.length === 0) {
+    container.innerHTML = "<p>No orders yet.</p>"
+    return
+  }
+
+  container.innerHTML = orders.map((order, i) => `
+    <div class="order-card mb-3 p-3 border rounded bg-light">
+      <h5>Order #${i + 1} - ${order.confirmationNumber}</h5>
+      <p><strong>Date:</strong> ${order.date}</p>
+      <p><strong>Name:</strong> ${order.user.name}</p>
+      <p><strong>Email:</strong> ${order.user.email}</p>
+      <ul>
+        ${order.cartItems.map(item => `
+          <li>${item.name} - $${item.price.toFixed(2)} x ${item.quantity}</li>
+        `).join('')}
+      </ul>
+      <p><strong>Total:</strong> $${order.totalPrice.toFixed(2)}</p>
+    </div>
+  `).join('')
+}
