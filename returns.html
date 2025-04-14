@@ -199,18 +199,27 @@
       };
 
       $scope.selectOrder = function(order) {
-        $scope.selectedOrder = {
-          orderId: order.orderId,
-          date: new Date(order.date),
-          total: order.total,
-          items: order.items.map(item => ({
-            ...item,
-            returnQty: item.quantity || 1,
-            selected: false
-          }))
-        };
-        $scope.updateSelectedItems();
-      };
+  $scope.selectedOrder = {
+    orderId: order.orderId,
+    date: new Date(order.date),
+    total: order.total,
+    items: []
+  };
+
+  $scope.selectedOrder.items = order.items.map(item => ({
+    productId: item.productId || 'prod-' + Math.floor(Math.random() * 1000000),
+    name: item.name || 'Unnamed Product',
+    price: item.price || 0,
+    quantity: item.quantity || 1,
+    image: item.image || item.img || 'https://via.placeholder.com/60?text=No+Image',
+    category: item.category || item.desc || 'Fragrance',
+    selected: false,
+    returnQty: item.quantity || 1
+  }));
+
+  $scope.updateSelectedItems();
+};
+
 
       $scope.updateSelectedItems = function() {
         $scope.selectedItems = $scope.selectedOrder.items.filter(item => item.selected);
