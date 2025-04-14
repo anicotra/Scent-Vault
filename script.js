@@ -107,7 +107,7 @@ function generateProductId() {
 
 // cart.js
 
-const API_URL = "https://bkkrrhvcorrj-html.na.app.codingrooms.com/cart.html"; // Replace with your actual API endpoint
+const API_URL = "https://anicotra.github.io/Scent-Vault/cart.html"; // Replace with your actual API endpoint
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
 // Ensure the DOM is fully loaded before updating the cart
