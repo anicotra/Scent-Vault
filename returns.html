@@ -14,15 +14,13 @@
   <style>
     body { padding: 20px; }
 
-    /* only show the active step */
+    /* hide all steps except the active one */
     .step-section { display: none; }
     .step-section.active { display: block; }
 
     .order-card {
-      padding: 15px;
-      margin-bottom: 10px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
+      padding: 15px; margin-bottom: 10px;
+      border: 1px solid #ddd; border-radius: 5px;
       cursor: pointer;
     }
     .order-card.selected {
@@ -31,12 +29,10 @@
     }
 
     .reason-option {
-      padding: 10px 15px;
-      margin: 5px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      cursor: pointer;
       display: inline-block;
+      padding: 10px 15px; margin: 5px;
+      border: 1px solid #ddd; border-radius: 5px;
+      cursor: pointer;
     }
     .reason-option.selected {
       border-color: #0d6efd;
@@ -44,19 +40,18 @@
     }
 
     .product-img {
-      width: 60px;
-      height: 60px;
-      object-fit: cover;
-      border-radius: 4px;
+      width: 60px; height: 60px;
+      object-fit: cover; border-radius: 4px;
       margin-right: 10px;
     }
   </style>
 </head>
+
 <body ng-controller="ReturnsController" class="p-4">
   <div class="container">
     <h2>Returns Center</h2>
 
-    <!-- Step 1: Find Order -->
+    <!-- STEP 1 -->
     <div class="step-section" ng-class="{active: currentStep===1}">
       <h4>1. Find Your Order</h4>
       <p class="text-muted">Enter either your email address or your confirmation number.</p>
@@ -72,7 +67,7 @@
       <a href="index.html" class="btn btn-secondary">Back to Home</a>
     </div>
 
-    <!-- Step 2: Select Order -->
+    <!-- STEP 2 -->
     <div class="step-section" ng-class="{active: currentStep===2}">
       <h4>2. Select Your Order</h4>
       <div ng-if="orders.length===0">
@@ -85,14 +80,17 @@
              ng-click="selectOrder(o)"
              ng-class="{'selected': selectedOrder===o}">
           <h5>Order #{{o.confirmationNumber}}</h5>
-          <p>Date: {{o.date | date:'mediumDate'}} &bull; Total: ${{ getOrderTotal(o).toFixed(2) }}</p>
+          <p>
+            Date: {{o.date | date:'mediumDate'}} &bull;
+            Total: ${{ getOrderTotal(o).toFixed(2) }}
+          </p>
         </div>
         <button class="btn btn-secondary me-2" ng-click="goToStep(1)">Back</button>
         <button class="btn btn-primary" ng-disabled="!selectedOrder" ng-click="goToStep(3)">Continue</button>
       </div>
     </div>
 
-    <!-- Step 3: Select Items to Return -->
+    <!-- STEP 3 -->
     <div class="step-section" ng-class="{active: currentStep===3}">
       <h4>3. Select Items to Return</h4>
       <div class="table-responsive mb-3">
@@ -126,7 +124,7 @@
       <button class="btn btn-primary" ng-disabled="!hasSelectedItems()" ng-click="goToStep(4)">Continue</button>
     </div>
 
-    <!-- Step 4: Reason for Return -->
+    <!-- STEP 4 -->
     <div class="step-section" ng-class="{active: currentStep===4}">
       <h4>4. Reason for Return</h4>
       <div class="mb-3">
@@ -145,11 +143,12 @@
       <button class="btn btn-primary" ng-disabled="!returnData.reason" ng-click="goToStep(5)">Continue</button>
     </div>
 
-    <!-- Step 5: Review & Submit -->
+    <!-- STEP 5 -->
     <div class="step-section" ng-class="{active: currentStep===5}">
       <h4>5. Review & Submit Return</h4>
-      <p><strong>Order #{{selectedOrder.confirmationNumber}}</strong>
-         ({{selectedOrder.date | date:'mediumDate'}})
+      <p>
+        <strong>Order #{{selectedOrder.confirmationNumber}}</strong>
+        ({{selectedOrder.date | date:'mediumDate'}})
       </p>
       <ul class="list-group mb-3">
         <li class="list-group-item"
@@ -166,90 +165,90 @@
   </div>
 
   <script>
-  angular.module('returnsApp', [])
-    .controller('ReturnsController', ['$scope', function($scope) {
-      $scope.currentStep = 1;
-      $scope.search = { email: '', orderNumber: '' };
-      $scope.orders = [];
-      $scope.selectedOrder = null;
-      $scope.returnReasons = [
-        {value:'wrong-item',label:'Wrong Item Received'},
-        {value:'defective',label:'Defective/Damaged'},
-        {value:'not-as-described',label:'Not As Described'},
-        {value:'no-longer-needed',label:'No Longer Needed'},
-        {value:'better-price',label:'Found Better Price'},
-        {value:'other',label:'Other'}
-      ];
-      $scope.returnData = { reason: '', details: '' };
+    angular.module('returnsApp', [])
+      .controller('ReturnsController', ['$scope', function($scope) {
+        // state
+        $scope.currentStep    = 1;
+        $scope.search         = { email: '', orderNumber: '' };
+        $scope.orders         = [];
+        $scope.selectedOrder  = null;
+        $scope.returnReasons  = [
+          {value:'wrong-item',label:'Wrong Item Received'},
+          {value:'defective',label:'Defective/Damaged'},
+          {value:'not-as-described',label:'Not As Described'},
+          {value:'no-longer-needed',label:'No Longer Needed'},
+          {value:'better-price',label:'Found Better Price'},
+          {value:'other',label:'Other'}
+        ];
+        $scope.returnData     = { reason: '', details: '' };
 
-      $scope.goToStep = s => $scope.currentStep = s;
+        // navigation
+        $scope.goToStep = step => $scope.currentStep = step;
 
-      $scope.findOrders = () => {
-        const allRaw = localStorage.getItem('orders');
-        let all = [];
-        try {
-          all = JSON.parse(allRaw) || [];
-        } catch(e) {
-          console.error('Could not parse orders JSON:', allRaw);
-        }
-        const e = $scope.search.email.trim().toLowerCase();
-        const n = $scope.search.orderNumber.trim();
-        if (!e && !n) {
-          alert('Please enter either an email or a confirmation number.');
-          return;
-        }
-        $scope.orders = all.filter(o => {
-          // try several common paths for the stored email
-          const storedEmail = (
-            (o.shipping && o.shipping.address && o.shipping.address.email) ||
-            o.email ||
-            (o.shipping && o.shipping.email) ||
-            ''
-          ).toLowerCase();
-          const emailMatch = e && storedEmail.includes(e);
-          const numMatch   = n && o.confirmationNumber === n;
-          return emailMatch || numMatch;
-        });
-        $scope.goToStep(2);
-      };
+        // Step 1 → load from localStorage key "currentorder"
+        $scope.findOrders = () => {
+          let all = [];
+          try {
+            const raw = localStorage.getItem('currentorder');
+            all = JSON.parse(raw) || [];
+          } catch(e) {
+            console.error('Could not parse currentorder:', e);
+          }
+          const e = $scope.search.email.trim().toLowerCase();
+          const n = $scope.search.orderNumber.trim();
+          if (!e && !n) {
+            return alert('Please enter either an email or a confirmation number.');
+          }
+          $scope.orders = all.filter(o => {
+            const storedEmail = (
+              (o.shipping?.address?.email) ||
+              o.email ||
+              ''
+            ).toLowerCase();
+            const emailMatch = e && storedEmail.includes(e);
+            const numMatch   = n && o.confirmationNumber === n;
+            return emailMatch || numMatch;
+          });
+          $scope.goToStep(2);
+        };
 
-      $scope.selectOrder = o => {
-        $scope.selectedOrder = angular.copy(o);
-        $scope.selectedOrder.items.forEach(i=>{
-          i.selected = false;
-          i.returnQty = i.quantity;
-        });
-      };
+        // Step 2
+        $scope.selectOrder = order => {
+          $scope.selectedOrder = angular.copy(order);
+          $scope.selectedOrder.items.forEach(i => {
+            i.selected  = false;
+            i.returnQty = i.quantity;
+          });
+        };
 
-      $scope.getArray = n => Array.from({length:n},(_,i)=>i+1);
-      $scope.hasSelectedItems = () =>
-        $scope.selectedOrder.items.some(i => i.selected);
+        // helpers
+        $scope.getArray        = n => Array.from({length:n}, (_,i)=>i+1);
+        $scope.hasSelectedItems= () => $scope.selectedOrder.items.some(i=>i.selected);
+        $scope.selectReason    = r => $scope.returnData.reason = r.value;
+        $scope.getReasonLabel  = v => ($scope.returnReasons.find(r=>r.value===v)||{}).label;
+        $scope.getOrderTotal   = o => {
+          const itemsSum = o.items.reduce((sum,i)=>sum + i.price*i.quantity, 0);
+          const shipCost = o.shipping?.method === 'express'   ? 12.99
+                         : o.shipping?.method === 'standard'  ? 5.99
+                         : 24.99;
+          return itemsSum * 1.06 + shipCost;
+        };
 
-      $scope.selectReason = r => $scope.returnData.reason = r.value;
-      $scope.getReasonLabel = v =>
-        ($scope.returnReasons.find(r=>r.value===v)||{}).label;
-
-      $scope.getOrderTotal = o => {
-        const sumItems = o.items.reduce((s,i)=>s+i.price*i.quantity,0);
-        const shipCost = o.shipping && o.shipping.method==='express'
-          ? 12.99
-          : o.shipping && o.shipping.method==='standard'
-            ? 5.99
-            : 24.99;
-        return sumItems * 1.06 + shipCost;
-      };
-
-      $scope.submitReturn = () => {
-        alert('Return submitted!');
-        $scope.search = { email:'', orderNumber:'' };
-        $scope.selectedOrder = null;
-        $scope.returnData = { reason:'', details:'' };
-        $scope.goToStep(1);
-      };
-    }]);
-</script>
+        // submit
+        $scope.submitReturn = () => {
+          alert('Return submitted!');
+          // reset everything
+          $scope.search        = { email: '', orderNumber: '' };
+          $scope.orders        = [];
+          $scope.selectedOrder = null;
+          $scope.returnData    = { reason: '', details: '' };
+          $scope.goToStep(1);
+        };
+      }]);
+  </script>
 </body>
 </html>
+
 
 
 
