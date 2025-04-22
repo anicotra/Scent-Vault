@@ -231,57 +231,133 @@
 
    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
    <script>
-  let currentShippingMethod = null;
-  let currentShippingCost = 0;
-  let currentCarrier = null;
+      // Track selections
+    let currentShippingMethod = null;
+    let currentShippingCarrier = null;
+    let cartSubtotal = 0;
 
-  function selectShippingMethod(method, cost) {
-    currentShippingMethod = method;
-    currentShippingCost = cost;
-    document.querySelectorAll('.shipping-option').forEach(el => el.classList.remove('selected'));
-    event.currentTarget.classList.add('selected');
-  }
+    function selectShippingMethod(method) {
+        // Remove highlight from all shipping method options
+        document.querySelectorAll('.shipping-option').forEach(option => {
+            if (option.closest('.form-section').querySelector('h3').textContent === 'Shipping Method') {
+                option.classList.remove('selected');
+            }
+        });
 
-  function selectShippingCarrier(carrier) {
-    currentCarrier = carrier;
-    document.querySelectorAll('.shipping-carrier').forEach(el => el.classList.remove('selected'));
-    event.currentTarget.classList.add('selected');
-  }
+        // Highlight selected option
+        event.currentTarget.classList.add('selected');
+        currentShippingMethod = method;
 
-  function proceedToPayment() {
-    const form = document.getElementById("shippingForm");
-    if (!form.checkValidity()) {
-      alert("Please complete all shipping fields.");
-      return;
+        // Update shipping cost in summary
+        updateShippingCost();
     }
 
-    if (!currentShippingMethod || !currentCarrier) {
-      alert("Please select a shipping method and carrier.");
-      return;
+    function selectShippingCarrier(carrier) {
+        // Remove highlight from all carrier options
+        document.querySelectorAll('.shipping-option').forEach(option => {
+            if (option.closest('.form-section').querySelector('h3').textContent === 'Shipping Carrier') {
+                option.classList.remove('selected');
+            }
+        });
+
+        // Highlight selected option
+        event.currentTarget.classList.add('selected');
+        currentShippingCarrier = carrier;
     }
 
-    const shippingData = {
-      address: {
-        firstName: document.getElementById("firstName").value,
-        lastName: document.getElementById("lastName").value,
-        address: document.getElementById("address").value,
-        city: document.getElementById("city").value,
-        state: document.getElementById("state").value,
-        zipCode: document.getElementById("zipCode").value,
-        email: document.getElementById("email").value
-      },
-      method: currentShippingMethod,
-      carrier: currentCarrier,
-      shipping: currentShippingCost
-    };
+    function updateShippingCost() {
+        let shippingCost = 0;
+        if (currentShippingMethod === 'standard') shippingCost = 5.99;
+        if (currentShippingMethod === 'express') shippingCost = 12.99;
+        if (currentShippingMethod === 'overnight') shippingCost = 24.99;
 
-    let tempOrder = JSON.parse(localStorage.getItem("tempOrder")) || {};
-    tempOrder.shipping = shippingData;
-    localStorage.setItem("tempOrder", JSON.stringify(tempOrder));
+        document.getElementById('shippingCost').textContent = `$${shippingCost.toFixed(2)}`;
+        updateOrderTotal();
+    }
 
-    window.location.href = "payment.html";
-  }
-</script>
+    function calculateTax(subtotal) {
+        return subtotal * 0.06; // 6% tax
+    }
+
+    function updateOrderTotal() {
+        const subtotal = parseFloat(document.getElementById('subtotal').textContent.replace('$', ''));
+        const shipping = parseFloat(document.getElementById('shippingCost').textContent.replace('$', ''));
+        const tax = calculateTax(subtotal);
+        
+        document.getElementById('tax').textContent = `$${tax.toFixed(2)}`;
+        
+        const total = subtotal + tax + shipping;
+        document.getElementById('orderTotal').textContent = `$${total.toFixed(2)}`;
+    }
+
+    function proceedToPayment() {
+        const form = document.getElementById('shippingForm');
+        if (!form.checkValidity()) {
+            alert('Please fill out all required shipping information.');
+            return;
+        }
+        
+        
+        if (!currentShippingMethod || !currentShippingCarrier) {
+            alert('Please select both a shipping method and carrier');
+            return;
+        }
+
+        
+        // Collect shipping data
+        const shippingData = {
+            address: {
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                address: document.getElementById('address').value,
+                city: document.getElementById('city').value,
+                state: document.getElementById('state').value,
+                zipCode: document.getElementById('zipCode').value,
+                email: document.getElementById('email').value,
+                saveAddress: document.getElementById('saveAddress').checked
+            },
+            method: currentShippingMethod,
+            carrier: currentShippingCarrier,
+            subtotal: cartSubtotal,
+            tax: calculateTax(cartSubtotal),
+            shipping: parseFloat(document.getElementById('shippingCost').textContent.replace('$', '')),
+            total: parseFloat(document.getElementById('orderTotal').textContent.replace('$', ''))
+        };
+        
+        // Save to localStorage and proceed
+        localStorage.setItem('shippingData', JSON.stringify(shippingData));
+        window.location.href = 'payment.html';
+    }
+
+    // Load cart items on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const orderItems = document.getElementById('orderItems');
+        cartSubtotal = 0;
+        
+        if (cart.length === 0) {
+            orderItems.innerHTML = '<p>Your cart is empty.</p>';
+        } else {
+            orderItems.innerHTML = '';
+            cart.forEach(item => {
+                const quantity = item.quantity || 1;
+                const itemTotal = item.price * quantity;
+                cartSubtotal += itemTotal;
+                
+                orderItems.innerHTML += `
+                    <div class="cart-item">
+                        <span>${item.name} × ${quantity}</span>
+                        <span>$${itemTotal.toFixed(2)}</span>
+                    </div>`;
+            });
+        }
+        
+        document.getElementById('subtotal').textContent = `$${cartSubtotal.toFixed(2)}`;
+        document.getElementById('tax').textContent = `$${calculateTax(cartSubtotal).toFixed(2)}`;
+        updateOrderTotal();
+    });
+   </script>
 </body>
 
 </html>
+
