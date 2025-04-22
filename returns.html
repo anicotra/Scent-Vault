@@ -3,25 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <title>Returns Center | Scent Vault</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <!-- Bootstrap CSS -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
-   <link rel="stylesheet" href="style.css">
-   <script src="script.js"></script>
-   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- AngularJS -->
   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
-
   <style>
     body { padding: 20px; }
-
-    /* hide all steps except the active one */
-    .step-section { display: none; }
-    .step-section.active { display: block; }
-
     .order-card {
       padding: 15px; margin-bottom: 10px;
       border: 1px solid #ddd; border-radius: 5px;
@@ -31,9 +17,7 @@
       border-color: #0d6efd;
       background-color: #f8f9fa;
     }
-
     .reason-option {
-      display: inline-block;
       padding: 10px 15px; margin: 5px;
       border: 1px solid #ddd; border-radius: 5px;
       cursor: pointer;
@@ -42,216 +26,237 @@
       border-color: #0d6efd;
       background-color: #f8f9fa;
     }
-
     .product-img {
       width: 60px; height: 60px;
-      object-fit: cover; border-radius: 4px;
+      object-fit: cover;
+      border-radius: 4px;
       margin-right: 10px;
     }
   </style>
 </head>
-
-<body ng-controller="ReturnsController" class="p-4">
+<body ng-controller="ReturnsController">
   <div class="container">
     <h2>Returns Center</h2>
+    <button class="btn btn-info mb-3" ng-click="debugMode = !debugMode">Toggle Debug Mode</button>
 
-    <!-- STEP 1 -->
-    <div class="step-section" ng-class="{active: currentStep===1}">
-      <h4>1. Find Your Order</h4>
-      <p class="text-muted">Enter either your email address or your confirmation number.</p>
-      <div class="row g-2 mb-3">
+    <!-- Step 1 -->
+    <div ng-show="currentStep === 1">
+      <h4>Find Your Order</h4>
+      <div class="alert alert-info">Enter your email or confirmation number to search for your order.</div>
+      <div class="row mb-3">
         <div class="col-md-6">
-          <input ng-model="search.email" type="email" class="form-control" placeholder="Email Address">
+          <label>Email Address</label>
+          <input type="email" class="form-control" ng-model="search.email">
         </div>
         <div class="col-md-6">
-          <input ng-model="search.orderNumber" type="text" class="form-control" placeholder="Confirmation Number">
+          <label>Order Number</label>
+          <input type="text" class="form-control" ng-model="search.orderNumber">
         </div>
       </div>
-      <button class="btn btn-primary me-2" ng-click="findOrders()">Find Orders</button>
-      <a href="index.html" class="btn btn-secondary">Back to Home</a>
-    </div>
+      <button class="btn btn-primary" ng-click="findOrders()">Find Orders</button>
+      <a href="index.html" class="btn btn-outline-secondary">Back to Home</a>
 
-    <!-- STEP 2 -->
-    <div class="step-section" ng-class="{active: currentStep===2}">
-      <h4>2. Select Your Order</h4>
-      <div ng-if="orders.length===0">
-        <p class="text-muted">No matching orders found.</p>
-        <button class="btn btn-secondary" ng-click="goToStep(1)">Back</button>
-      </div>
-      <div ng-if="orders.length>0">
-        <div class="order-card"
-             ng-repeat="o in orders"
-             ng-click="selectOrder(o)"
-             ng-class="{'selected': selectedOrder===o}">
-          <h5>Order #{{o.confirmationNumber}}</h5>
-          <p>
-            Date: {{o.date | date:'mediumDate'}} &bull;
-            Total: ${{ getOrderTotal(o).toFixed(2) }}
-          </p>
+      <div class="mt-4" ng-if="orders.length > 0">
+        <div class="order-card" ng-repeat="order in orders" ng-click="selectOrder(order)" ng-class="{'selected': selectedOrder.orderId === order.orderId}">
+          <h5>Order #{{order.orderId}}</h5>
+          <p>Placed on {{order.date | date:'mediumDate'}}<br>Total: ${{order.total.toFixed(2)}}</p>
+          <span class="badge bg-secondary">{{order.items.length}} items</span>
         </div>
-        <button class="btn btn-secondary me-2" ng-click="goToStep(1)">Back</button>
-        <button class="btn btn-primary" ng-disabled="!selectedOrder" ng-click="goToStep(3)">Continue</button>
+        <button class="btn btn-primary mt-2" ng-click="nextStep()">Continue With Selected Order</button>
       </div>
     </div>
 
-    <!-- STEP 3 -->
-    <div class="step-section" ng-class="{active: currentStep===3}">
-      <h4>3. Select Items to Return</h4>
-      <div class="table-responsive mb-3">
+    <!-- Step 2 -->
+    <div ng-show="currentStep === 2">
+      <h4>Select Items to Return</h4>
+      <p>Order #{{selectedOrder.orderId}} - {{selectedOrder.date | date:'mediumDate'}}</p>
+
+      <div class="table-responsive">
         <table class="table">
-          <thead>
-            <tr>
-              <th></th>
-              <th>Image</th>
-              <th>Product</th>
-              <th>Price</th>
-              <th>Qty</th>
-            </tr>
-          </thead>
+          <thead><tr><th></th><th>Product</th><th>Price</th><th>Quantity</th></tr></thead>
           <tbody>
             <tr ng-repeat="item in selectedOrder.items">
-              <td><input type="checkbox" ng-model="item.selected"></td>
-              <td><img ng-src="{{item.image}}" class="product-img"></td>
-              <td>{{item.name}}</td>
+              <td><input type="checkbox" ng-model="item.selected" ng-change="updateSelectedItems()"></td>
+              <td><img ng-src="{{item.image}}" class="product-img">{{item.name}}</td>
               <td>${{item.price.toFixed(2)}}</td>
               <td>
-                <select class="form-select"
-                        ng-model="item.returnQty"
-                        ng-options="n for n in getArray(item.quantity)">
+                <select class="form-select" ng-model="item.returnQty" 
+                        ng-options="n for n in getQuantityArray(item.quantity)">
                 </select>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-      <button class="btn btn-secondary me-2" ng-click="goToStep(2)">Back</button>
-      <button class="btn btn-primary" ng-disabled="!hasSelectedItems()" ng-click="goToStep(4)">Continue</button>
+
+      <div class="d-flex justify-content-between">
+        <button class="btn btn-outline-secondary" ng-click="prevStep()">Back</button>
+        <button class="btn btn-primary" ng-disabled="selectedItems.length === 0" ng-click="nextStep()">Continue</button>
+      </div>
     </div>
 
-    <!-- STEP 4 -->
-    <div class="step-section" ng-class="{active: currentStep===4}">
-      <h4>4. Reason for Return</h4>
-      <div class="mb-3">
-        <div class="reason-option"
-             ng-repeat="r in returnReasons"
-             ng-click="selectReason(r)"
-             ng-class="{'selected': returnData.reason===r.value}">
-          {{r.label}}
+    <!-- Step 3 -->
+    <div ng-show="currentStep === 3">
+      <h4>Return Reason</h4>
+      <div class="d-flex flex-wrap mb-3">
+        <div class="reason-option" ng-repeat="reason in returnReasons" ng-click="selectReason(reason)" ng-class="{'selected': returnData.reason === reason.value}">
+          {{reason.label}}
         </div>
       </div>
-      <div ng-if="returnData.reason==='other'" class="mb-3">
-        <label>Please specify:</label>
+      <div ng-show="returnData.reason === 'other'">
+        <label>Details:</label>
         <textarea class="form-control" ng-model="returnData.details" rows="3"></textarea>
       </div>
-      <button class="btn btn-secondary me-2" ng-click="goToStep(3)">Back</button>
-      <button class="btn btn-primary" ng-disabled="!returnData.reason" ng-click="goToStep(5)">Continue</button>
+      <div class="d-flex justify-content-between mt-3">
+        <button class="btn btn-outline-secondary" ng-click="prevStep()">Back</button>
+        <button class="btn btn-primary" ng-click="nextStep()">Continue</button>
+      </div>
     </div>
 
-    <!-- STEP 5 -->
-    <div class="step-section" ng-class="{active: currentStep===5}">
-      <h4>5. Review & Submit Return</h4>
-      <p>
-        <strong>Order #{{selectedOrder.confirmationNumber}}</strong>
-        ({{selectedOrder.date | date:'mediumDate'}})
-      </p>
-      <ul class="list-group mb-3">
-        <li class="list-group-item"
-            ng-repeat="item in selectedOrder.items | filter:{selected:true}">
-          <img ng-src="{{item.image}}" class="product-img me-2">
-          {{item.name}} × {{item.returnQty}} — ${{(item.price*item.returnQty).toFixed(2)}}
-        </li>
-      </ul>
-      <p><strong>Reason:</strong> {{getReasonLabel(returnData.reason)}}</p>
-      <p ng-if="returnData.details"><strong>Details:</strong> {{returnData.details}}</p>
-      <button class="btn btn-secondary me-2" ng-click="goToStep(4)">Back</button>
-      <button class="btn btn-success" ng-click="submitReturn()">Submit Return</button>
+    <!-- Step 4 -->
+    <div ng-show="currentStep === 4">
+      <h4>Review Your Return</h4>
+      <table class="table">
+        <thead><tr><th>Product</th><th>Qty</th><th>Refund</th></tr></thead>
+        <tbody>
+          <tr ng-repeat="item in selectedItems">
+            <td>{{item.name}}</td>
+            <td>{{item.returnQty}}</td>
+            <td>${{(item.price * item.returnQty).toFixed(2)}}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="text-end">
+        <p>Subtotal: ${{calculateRefundSubtotal().toFixed(2)}}</p>
+        <p>Tax: ${{(calculateRefundSubtotal() * 0.06).toFixed(2)}}</p>
+        <h5>Total Refund: ${{calculateTotalRefund().toFixed(2)}}</h5>
+      </div>
+      <p>Reason: {{getReasonLabel(returnData.reason)}}<br>{{returnData.details}}</p>
+      <div class="d-flex justify-content-between">
+        <button class="btn btn-outline-secondary" ng-click="prevStep()">Back</button>
+        <button class="btn btn-primary" ng-click="submitReturn()">Submit Return</button>
+      </div>
     </div>
   </div>
 
   <script>
     angular.module('returnsApp', [])
-      .controller('ReturnsController', ['$scope', function($scope) {
-        // state
-        $scope.currentStep    = 1;
-        $scope.search         = { email: '', orderNumber: '' };
-        $scope.orders         = [];
-        $scope.selectedOrder  = null;
-        $scope.returnReasons  = [
-          {value:'wrong-item',label:'Wrong Item Received'},
-          {value:'defective',label:'Defective/Damaged'},
-          {value:'not-as-described',label:'Not As Described'},
-          {value:'no-longer-needed',label:'No Longer Needed'},
-          {value:'better-price',label:'Found Better Price'},
-          {value:'other',label:'Other'}
-        ];
-        $scope.returnData     = { reason: '', details: '' };
+    .controller('ReturnsController', ['$scope', function($scope) {
+      $scope.currentStep = 1;
+      $scope.search = { email: '', orderNumber: '' };
+      $scope.orders = [];
+      $scope.selectedOrder = null;
+      $scope.selectedItems = [];
+      $scope.returnData = { reason: '', details: '' };
+      $scope.debugMode = false;
 
-        // navigation
-        $scope.goToStep = step => $scope.currentStep = step;
+      $scope.returnReasons = [
+        { value: 'wrong-item', label: 'Wrong Item Received' },
+        { value: 'defective', label: 'Defective/Damaged' },
+        { value: 'not-as-described', label: 'Not As Described' },
+        { value: 'no-longer-needed', label: 'No Longer Needed' },
+        { value: 'better-price', label: 'Found Better Price' },
+        { value: 'other', label: 'Other Reason' }
+      ];
 
-        // Step 1 → load from localStorage key "currentorder"
-        $scope.findOrders = () => {
-          let all = [];
-          try {
-            const raw = localStorage.getItem('currentorder');
-            all = JSON.parse(raw) || [];
-          } catch(e) {
-            console.error('Could not parse currentorder:', e);
-          }
-          const e = $scope.search.email.trim().toLowerCase();
-          const n = $scope.search.orderNumber.trim();
-          if (!e && !n) {
-            return alert('Please enter either an email or a confirmation number.');
-          }
-          $scope.orders = all.filter(o => {
-            const storedEmail = (
-              (o.shipping?.address?.email) ||
-              o.email ||
-              ''
-            ).toLowerCase();
-            const emailMatch = e && storedEmail.includes(e);
-            const numMatch   = n && o.confirmationNumber === n;
-            return emailMatch || numMatch;
+      $scope.getQuantityArray = function(max) {
+        return Array.from({ length: max }, (_, i) => i + 1);
+      };
+
+      $scope.findOrders = function() {
+        $scope.orders = [];
+
+        const email = $scope.search.email?.trim().toLowerCase();
+        const orderNum = $scope.search.orderNumber?.trim();
+
+        const currentOrder = JSON.parse(localStorage.getItem('currentOrder') || '{}');
+        const completeOrder = JSON.parse(localStorage.getItem('completeOrderData') || '{}');
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+
+        const match = (order) =>
+          order?.confirmation === orderNum ||
+          order?.confirmationNumber === orderNum ||
+          order?.shopper?.email?.toLowerCase() === email ||
+          order?.shipping?.email?.toLowerCase() === email;
+
+        if (match(currentOrder)) {
+          $scope.orders.push({
+            orderId: currentOrder.confirmation || 'SCV-' + Date.now(),
+            date: new Date(currentOrder.date || Date.now()),
+            total: currentOrder.total || 0,
+            items: currentOrder.items || cart
           });
-          $scope.goToStep(2);
-        };
-
-        // Step 2
-        $scope.selectOrder = order => {
-          $scope.selectedOrder = angular.copy(order);
-          $scope.selectedOrder.items.forEach(i => {
-            i.selected  = false;
-            i.returnQty = i.quantity;
+        } else if (match(completeOrder)) {
+          $scope.orders.push({
+            orderId: completeOrder.order?.confirmationNumber || 'SCV-' + Date.now(),
+            date: new Date(completeOrder.order?.date || Date.now()),
+            total: completeOrder.order?.total || 0,
+            items: completeOrder.cart || []
           });
-        };
+        }
 
-        // helpers
-        $scope.getArray        = n => Array.from({length:n}, (_,i)=>i+1);
-        $scope.hasSelectedItems= () => $scope.selectedOrder.items.some(i=>i.selected);
-        $scope.selectReason    = r => $scope.returnData.reason = r.value;
-        $scope.getReasonLabel  = v => ($scope.returnReasons.find(r=>r.value===v)||{}).label;
-        $scope.getOrderTotal   = o => {
-          const itemsSum = o.items.reduce((sum,i)=>sum + i.price*i.quantity, 0);
-          const shipCost = o.shipping?.method === 'express'   ? 12.99
-                         : o.shipping?.method === 'standard'  ? 5.99
-                         : 24.99;
-          return itemsSum * 1.06 + shipCost;
-        };
+        if ($scope.orders.length === 0) alert('No matching orders found.');
+      };
 
-        // submit
-        $scope.submitReturn = () => {
-          alert('Return submitted!');
-          // reset everything
-          $scope.search        = { email: '', orderNumber: '' };
-          $scope.orders        = [];
-          $scope.selectedOrder = null;
-          $scope.returnData    = { reason: '', details: '' };
-          $scope.goToStep(1);
-        };
-      }]);
+      $scope.selectOrder = function(order) {
+  $scope.selectedOrder = {
+    orderId: order.orderId,
+    date: new Date(order.date),
+    total: order.total,
+    items: []
+  };
+
+  $scope.selectedOrder.items = order.items.map(item => ({
+    productId: item.productId || 'prod-' + Math.floor(Math.random() * 1000000),
+    name: item.name || 'Unnamed Product',
+    price: item.price || 0,
+    quantity: item.quantity || 1,
+    image: item.image || item.img || 'https://via.placeholder.com/60?text=No+Image',
+    category: item.category || item.desc || 'Fragrance',
+    selected: false,
+    returnQty: item.quantity || 1
+  }));
+
+  $scope.updateSelectedItems();
+};
+
+
+      $scope.updateSelectedItems = function() {
+        $scope.selectedItems = $scope.selectedOrder.items.filter(item => item.selected);
+      };
+
+      $scope.selectReason = function(reason) {
+        $scope.returnData.reason = reason.value;
+        if (reason.value !== 'other') $scope.returnData.details = '';
+      };
+
+      $scope.getReasonLabel = function(value) {
+        const found = $scope.returnReasons.find(r => r.value === value);
+        return found ? found.label : '';
+      };
+
+      $scope.calculateRefundSubtotal = function() {
+        return $scope.selectedItems.reduce((sum, item) => sum + (item.price * item.returnQty), 0);
+      };
+
+      $scope.calculateTotalRefund = function() {
+        const subtotal = $scope.calculateRefundSubtotal();
+        return subtotal + subtotal * 0.06;
+      };
+
+      $scope.nextStep = function() { $scope.currentStep++; };
+      $scope.prevStep = function() { $scope.currentStep--; };
+
+      $scope.submitReturn = function() {
+        if (!$scope.returnData.reason) return alert("Select a reason.");
+        alert('Return submitted successfully!');
+        setTimeout(() => window.location.href = 'index.html', 2000);
+      };
+    }]);
   </script>
 </body>
 </html>
+
 
 
 
