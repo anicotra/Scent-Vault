@@ -34,13 +34,14 @@
     }
   </style>
 </head>
-<body ng-controller="ReturnsController" class="p-4">
+<body ng-controller="ReturnsController">
   <div class="container">
     <h2>Returns Center</h2>
+    <button class="btn btn-info mb-3" ng-click="debugMode = !debugMode">Toggle Debug Mode</button>
 
-    <!-- Step 1: Find Order -->
-    <div class="step-section" ng-class="{active: currentStep===1}">
-      <h4>1. Find Your Order</h4>
+    <!-- Step 1 -->
+    <div ng-show="currentStep === 1">
+      <h4>Find Your Order</h4>
       <div class="alert alert-info">Enter your email or confirmation number to search for your order.</div>
       <div class="row mb-3">
         <div class="col-md-6">
@@ -65,9 +66,9 @@
       </div>
     </div>
 
-    <!-- Step 2: Select Items -->
-    <div class="step-section" ng-class="{active: currentStep===2}">
-      <h4>2. Select Items to Return</h4>
+    <!-- Step 2 -->
+    <div ng-show="currentStep === 2">
+      <h4>Select Items to Return</h4>
       <p>Order #{{selectedOrder.orderId}} - {{selectedOrder.date | date:'mediumDate'}}</p>
 
       <div class="table-responsive">
@@ -76,7 +77,7 @@
           <tbody>
             <tr ng-repeat="item in selectedOrder.items">
               <td><input type="checkbox" ng-model="item.selected" ng-change="updateSelectedItems()"></td>
-              <td><img ng-src="{{item.image}}" class="product-img"> {{item.name}}</td>
+              <td><img ng-src="{{item.image}}" class="product-img">{{item.name}}</td>
               <td>${{item.price.toFixed(2)}}</td>
               <td>
                 <select class="form-select" ng-model="item.returnQty" 
@@ -94,9 +95,9 @@
       </div>
     </div>
 
-    <!-- Step 3: Return Reason -->
-    <div class="step-section" ng-class="{active: currentStep===3}">
-      <h4>3. Return Reason</h4>
+    <!-- Step 3 -->
+    <div ng-show="currentStep === 3">
+      <h4>Return Reason</h4>
       <div class="d-flex flex-wrap mb-3">
         <div class="reason-option" ng-repeat="reason in returnReasons" ng-click="selectReason(reason)" ng-class="{'selected': returnData.reason === reason.value}">
           {{reason.label}}
@@ -112,9 +113,9 @@
       </div>
     </div>
 
-    <!-- Step 4: Review & Submit -->
-    <div class="step-section" ng-class="{active: currentStep===4}">
-      <h4>4. Review Your Return</h4>
+    <!-- Step 4 -->
+    <div ng-show="currentStep === 4">
+      <h4>Review Your Return</h4>
       <table class="table">
         <thead><tr><th>Product</th><th>Qty</th><th>Refund</th></tr></thead>
         <tbody>
@@ -138,7 +139,6 @@
     </div>
   </div>
 
-  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
   <script>
     angular.module('returnsApp', [])
     .controller('ReturnsController', ['$scope', function($scope) {
@@ -147,6 +147,9 @@
       $scope.orders = [];
       $scope.selectedOrder = null;
       $scope.selectedItems = [];
+      $scope.returnData = { reason: '', details: '' };
+      $scope.debugMode = false;
+
       $scope.returnReasons = [
         { value: 'wrong-item', label: 'Wrong Item Received' },
         { value: 'defective', label: 'Defective/Damaged' },
@@ -155,7 +158,6 @@
         { value: 'better-price', label: 'Found Better Price' },
         { value: 'other', label: 'Other Reason' }
       ];
-      $scope.returnData = { reason: '', details: '' };
 
       $scope.getQuantityArray = function(max) {
         return Array.from({ length: max }, (_, i) => i + 1);
@@ -194,62 +196,65 @@
         }
 
         if ($scope.orders.length === 0) alert('No matching orders found.');
-        else $scope.currentStep = 2;
       };
 
       $scope.selectOrder = function(order) {
-        $scope.selectedOrder = {
-          orderId: order.orderId,
-          date: new Date(order.date),
-          total: order.total,
-          items: []
-        };
+  $scope.selectedOrder = {
+    orderId: order.orderId,
+    date: new Date(order.date),
+    total: order.total,
+    items: []
+  };
 
-        $scope.selectedOrder.items = order.items.map(item => ({
-          productId: item.productId || 'prod-' + Math.floor(Math.random() * 1000000),
-          name: item.name || 'Unnamed Product',
-          price: item.price || 0,
-          quantity: item.quantity || 1,
-          image: item.image || item.img || 'https://via.placeholder.com/60?text=No+Image',
-          selected: false,
-          returnQty: item.quantity || 1
-        }));
+  $scope.selectedOrder.items = order.items.map(item => ({
+    productId: item.productId || 'prod-' + Math.floor(Math.random() * 1000000),
+    name: item.name || 'Unnamed Product',
+    price: item.price || 0,
+    quantity: item.quantity || 1,
+    image: item.image || item.img || 'https://via.placeholder.com/60?text=No+Image',
+    category: item.category || item.desc || 'Fragrance',
+    selected: false,
+    returnQty: item.quantity || 1
+  }));
 
-        $scope.currentStep = 3;
-      };
+  $scope.updateSelectedItems();
+};
+
 
       $scope.updateSelectedItems = function() {
-        $scope.selectedItems = $scope.selectedOrder.items.filter(i => i.selected);
+        $scope.selectedItems = $scope.selectedOrder.items.filter(item => item.selected);
       };
 
-      $scope.nextStep = function() { if ($scope.currentStep < 4) $scope.currentStep++; };
-      $scope.prevStep = function() { if ($scope.currentStep > 1) $scope.currentStep--; };
+      $scope.selectReason = function(reason) {
+        $scope.returnData.reason = reason.value;
+        if (reason.value !== 'other') $scope.returnData.details = '';
+      };
 
-      $scope.selectReason = function(reason) { $scope.returnData.reason = reason.value; };
-      $scope.getReasonLabel = function(val) {
-        const found = $scope.returnReasons.find(r => r.value === val);
+      $scope.getReasonLabel = function(value) {
+        const found = $scope.returnReasons.find(r => r.value === value);
         return found ? found.label : '';
       };
 
       $scope.calculateRefundSubtotal = function() {
-        return $scope.selectedItems.reduce((sum, i) => sum + i.price * i.returnQty, 0);
-      };
-      $scope.calculateTotalRefund = function() {
-        const sub = $scope.calculateRefundSubtotal();
-        return sub + sub * 0.06;
+        return $scope.selectedItems.reduce((sum, item) => sum + (item.price * item.returnQty), 0);
       };
 
+      $scope.calculateTotalRefund = function() {
+        const subtotal = $scope.calculateRefundSubtotal();
+        return subtotal + subtotal * 0.06;
+      };
+
+      $scope.nextStep = function() { $scope.currentStep++; };
+      $scope.prevStep = function() { $scope.currentStep--; };
+
       $scope.submitReturn = function() {
-        alert('Return submitted!');
-        $scope.currentStep = 1;
-        $scope.search = { email: '', orderNumber: '' };
-        $scope.orders = [];
-        $scope.selectedOrder = null;
-        $scope.selectedItems = [];
-        $scope.returnData = { reason: '', details: '' };
+        if (!$scope.returnData.reason) return alert("Select a reason.");
+        alert('Return submitted successfully!');
+        setTimeout(() => window.location.href = 'index.html', 2000);
       };
     }]);
   </script>
 </body>
 </html>
+
 
