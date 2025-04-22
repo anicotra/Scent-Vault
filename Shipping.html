@@ -328,8 +328,8 @@
         let tempOrder = JSON.parse(localStorage.getItem("tempOrder")) || {};
 tempOrder.shipping = shippingData;
 localStorage.setItem("tempOrder", JSON.stringify(tempOrder));
-    }
 
+window.location.href = 'payment.html';
     // Load cart items on page load
     document.addEventListener('DOMContentLoaded', function() {
         const cart = JSON.parse(localStorage.getItem('cart')) || [];
