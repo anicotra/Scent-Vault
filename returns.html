@@ -140,7 +140,6 @@
   </div>
 
   <script>
-      <script>
     angular.module('returnsApp', [])
     .controller('ReturnsController', ['$scope', function($scope) {
       $scope.currentStep = 1;
@@ -149,6 +148,7 @@
       $scope.selectedOrder = null;
       $scope.selectedItems = [];
       $scope.returnData = { reason: '', details: '' };
+      $scope.debugMode = false;
 
       $scope.returnReasons = [
         { value: 'wrong-item', label: 'Wrong Item Received' },
@@ -164,41 +164,62 @@
       };
 
       $scope.findOrders = function() {
+        $scope.orders = [];
+
         const email = $scope.search.email?.trim().toLowerCase();
         const orderNum = $scope.search.orderNumber?.trim();
-        const allOrders = JSON.parse(localStorage.getItem("orders")) || [];
 
-        $scope.orders = allOrders.filter(order =>
-          (orderNum && order.confirmation === orderNum) ||
-          (email && order.shipping?.address?.email?.toLowerCase() === email || order.shopper?.email?.toLowerCase() === email)
-        ).map(order => ({
-          orderId: order.confirmation,
-          date: new Date(order.date),
-          total: order.total,
-          items: order.cart
-        }));
+        const currentOrder = JSON.parse(localStorage.getItem('currentOrder') || '{}');
+        const completeOrder = JSON.parse(localStorage.getItem('completeOrderData') || '{}');
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
 
-        if ($scope.orders.length === 0) {
-          alert("No matching orders found.");
+        const match = (order) =>
+          order?.confirmation === orderNum ||
+          order?.confirmationNumber === orderNum ||
+          order?.shopper?.email?.toLowerCase() === email ||
+          order?.shipping?.email?.toLowerCase() === email;
+
+        if (match(currentOrder)) {
+          $scope.orders.push({
+            orderId: currentOrder.confirmation || 'SCV-' + Date.now(),
+            date: new Date(currentOrder.date || Date.now()),
+            total: currentOrder.total || 0,
+            items: currentOrder.items || cart
+          });
+        } else if (match(completeOrder)) {
+          $scope.orders.push({
+            orderId: completeOrder.order?.confirmationNumber || 'SCV-' + Date.now(),
+            date: new Date(completeOrder.order?.date || Date.now()),
+            total: completeOrder.order?.total || 0,
+            items: completeOrder.cart || []
+          });
         }
+
+        if ($scope.orders.length === 0) alert('No matching orders found.');
       };
 
       $scope.selectOrder = function(order) {
-        $scope.selectedOrder = {
-          orderId: order.orderId,
-          date: new Date(order.date),
-          total: order.total,
-          items: order.items.map(item => ({
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity || 1,
-            image: item.image || item.img,
-            selected: false,
-            returnQty: item.quantity || 1
-          }))
-        };
-        $scope.updateSelectedItems();
-      };
+  $scope.selectedOrder = {
+    orderId: order.orderId,
+    date: new Date(order.date),
+    total: order.total,
+    items: []
+  };
+
+  $scope.selectedOrder.items = order.items.map(item => ({
+    productId: item.productId || 'prod-' + Math.floor(Math.random() * 1000000),
+    name: item.name || 'Unnamed Product',
+    price: item.price || 0,
+    quantity: item.quantity || 1,
+    image: item.image || item.img || 'https://via.placeholder.com/60?text=No+Image',
+    category: item.category || item.desc || 'Fragrance',
+    selected: false,
+    returnQty: item.quantity || 1
+  }));
+
+  $scope.updateSelectedItems();
+};
+
 
       $scope.updateSelectedItems = function() {
         $scope.selectedItems = $scope.selectedOrder.items.filter(item => item.selected);
@@ -228,10 +249,11 @@
 
       $scope.submitReturn = function() {
         if (!$scope.returnData.reason) return alert("Select a reason.");
-        alert("Return submitted successfully!");
-        setTimeout(() => window.location.href = 'index.html', 1500);
+        alert('Return submitted successfully!');
+        setTimeout(() => window.location.href = 'index.html', 2000);
       };
     }]);
   </script>
 </body>
 </html>
+
