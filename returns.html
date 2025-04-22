@@ -10,62 +10,53 @@
   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
   <style>
     body { padding: 20px; }
-    /* hide all steps by default */
-    .step-section { display: none; }
-    /* show only the active one */
-    .step-section.active { display: block; }
-
     .order-card {
-      padding: 15px;
-      margin-bottom: 10px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
+      padding: 15px; margin-bottom: 10px;
+      border: 1px solid #ddd; border-radius: 5px;
       cursor: pointer;
     }
     .order-card.selected {
       border-color: #0d6efd;
       background-color: #f8f9fa;
     }
-
     .reason-option {
-      display: inline-block;
-      width: calc(50% - 12px);
-      margin: 6px;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
+      padding: 10px 15px; margin: 5px;
+      border: 1px solid #ddd; border-radius: 5px;
       cursor: pointer;
-      text-align: center;
     }
     .reason-option.selected {
       border-color: #0d6efd;
       background-color: #f8f9fa;
     }
-
     .product-img {
-      width: 60px;
-      height: 60px;
+      width: 60px; height: 60px;
       object-fit: cover;
       border-radius: 4px;
       margin-right: 10px;
     }
   </style>
 </head>
-<body ng-controller="ReturnsController">
+<body ng-controller="ReturnsController" class="p-4">
   <div class="container">
-    <h2 class="mb-4">Returns Center</h2>
+    <h2>Returns Center</h2>
 
-    <!-- Step 1 -->
+    <!-- Step 1: Find Order -->
     <div class="step-section" ng-class="{active: currentStep===1}">
       <h4>1. Find Your Order</h4>
-      <div class="mb-3">
-        <input ng-model="search.email" type="email" class="form-control mb-2" placeholder="Email Address">
-        <input ng-model="search.orderNumber" type="text" class="form-control" placeholder="Confirmation Number">
+      <p class="text-muted">Enter either your email address or your confirmation number.</p>
+      <div class="row g-2 mb-3">
+        <div class="col-md-6">
+          <input ng-model="search.email" type="email" class="form-control" placeholder="Email Address">
+        </div>
+        <div class="col-md-6">
+          <input ng-model="search.orderNumber" type="text" class="form-control" placeholder="Confirmation Number">
+        </div>
       </div>
-      <button class="btn btn-primary" ng-click="findOrders()">Find Orders</button>
+      <button class="btn btn-primary me-2" ng-click="findOrders()">Find Orders</button>
+      <a href="index.html" class="btn btn-secondary">Back to Home</a>
     </div>
 
-    <!-- Step 2 -->
+    <!-- Step 2: Select Order -->
     <div class="step-section" ng-class="{active: currentStep===2}">
       <h4>2. Select Your Order</h4>
       <div ng-if="orders.length===0">
@@ -78,29 +69,20 @@
              ng-click="selectOrder(o)"
              ng-class="{'selected': selectedOrder===o}">
           <h5>Order #{{o.confirmationNumber}}</h5>
-          <p>
-            Date: {{o.date | date:'mediumDate'}} &bull;
-            Total: ${{ getOrderTotal(o).toFixed(2) }}
-          </p>
+          <p>Date: {{o.date | date:'mediumDate'}} &bull; Total: ${{ getOrderTotal(o).toFixed(2) }}</p>
         </div>
         <button class="btn btn-secondary me-2" ng-click="goToStep(1)">Back</button>
         <button class="btn btn-primary" ng-disabled="!selectedOrder" ng-click="goToStep(3)">Continue</button>
       </div>
     </div>
 
-    <!-- Step 3 -->
+    <!-- Step 3: Select Items to Return -->
     <div class="step-section" ng-class="{active: currentStep===3}">
       <h4>3. Select Items to Return</h4>
       <div class="table-responsive mb-3">
         <table class="table">
           <thead>
-            <tr>
-              <th></th>
-              <th>Image</th>
-              <th>Product</th>
-              <th>Price</th>
-              <th>Qty</th>
-            </tr>
+            <tr><th></th><th>Image</th><th>Product</th><th>Price</th><th>Qty</th></tr>
           </thead>
           <tbody>
             <tr ng-repeat="item in selectedOrder.items">
@@ -109,7 +91,8 @@
               <td>{{item.name}}</td>
               <td>${{item.price.toFixed(2)}}</td>
               <td>
-                <select class="form-select" ng-model="item.returnQty"
+                <select class="form-select"
+                        ng-model="item.returnQty"
                         ng-options="n for n in getArray(item.quantity)">
                 </select>
               </td>
@@ -121,10 +104,10 @@
       <button class="btn btn-primary" ng-disabled="!hasSelectedItems()" ng-click="goToStep(4)">Continue</button>
     </div>
 
-    <!-- Step 4 -->
+    <!-- Step 4: Reason for Return -->
     <div class="step-section" ng-class="{active: currentStep===4}">
       <h4>4. Reason for Return</h4>
-      <div>
+      <div class="mb-3">
         <div class="reason-option"
              ng-repeat="r in returnReasons"
              ng-click="selectReason(r)"
@@ -132,15 +115,15 @@
           {{r.label}}
         </div>
       </div>
-      <div ng-if="returnData.reason==='other'" class="mt-3">
+      <div ng-if="returnData.reason==='other'" class="mb-3">
         <label>Please specify:</label>
         <textarea class="form-control" ng-model="returnData.details" rows="3"></textarea>
       </div>
-      <button class="btn btn-secondary me-2 mt-3" ng-click="goToStep(3)">Back</button>
-      <button class="btn btn-primary mt-3" ng-disabled="!returnData.reason" ng-click="goToStep(5)">Continue</button>
+      <button class="btn btn-secondary me-2" ng-click="goToStep(3)">Back</button>
+      <button class="btn btn-primary" ng-disabled="!returnData.reason" ng-click="goToStep(5)">Continue</button>
     </div>
 
-    <!-- Step 5 -->
+    <!-- Step 5: Review & Submit -->
     <div class="step-section" ng-class="{active: currentStep===5}">
       <h4>5. Review & Submit Return</h4>
       <p><strong>Order #{{selectedOrder.confirmationNumber}}</strong>
@@ -150,8 +133,7 @@
         <li class="list-group-item"
             ng-repeat="item in selectedOrder.items | filter:{selected:true}">
           <img ng-src="{{item.image}}" class="product-img me-2">
-          {{item.name}} × {{item.returnQty}}
-          — ${{(item.price*item.returnQty).toFixed(2)}}
+          {{item.name}} × {{item.returnQty}} — ${{(item.price*item.returnQty).toFixed(2)}}
         </li>
       </ul>
       <p><strong>Reason:</strong> {{getReasonLabel(returnData.reason)}}</p>
@@ -168,8 +150,6 @@
         $scope.search = { email: '', orderNumber: '' };
         $scope.orders = [];
         $scope.selectedOrder = null;
-        $scope.returnData = { reason: '', details: '' };
-
         $scope.returnReasons = [
           {value:'wrong-item',label:'Wrong Item Received'},
           {value:'defective',label:'Defective/Damaged'},
@@ -178,11 +158,12 @@
           {value:'better-price',label:'Found Better Price'},
           {value:'other',label:'Other'}
         ];
+        $scope.returnData = { reason: '', details: '' };
 
         $scope.goToStep = step => $scope.currentStep = step;
 
         $scope.findOrders = () => {
-          const all = JSON.parse(localStorage.getItem('orders')||'[]');
+          const all = JSON.parse(localStorage.getItem('orders') || '[]');
           const e = $scope.search.email.trim().toLowerCase();
           const n = $scope.search.orderNumber.trim();
           $scope.orders = all.filter(o => {
@@ -195,24 +176,25 @@
 
         $scope.selectOrder = o => {
           $scope.selectedOrder = angular.copy(o);
-          $scope.selectedOrder.items.forEach(i=>{
+          $scope.selectedOrder.items.forEach(i => {
             i.selected = false;
             i.returnQty = i.quantity;
           });
         };
 
         $scope.getArray = n => Array.from({length:n},(_,i)=>i+1);
-        $scope.hasSelectedItems = () => $scope.selectedOrder.items.some(i=>i.selected);
+        $scope.hasSelectedItems = () =>
+          $scope.selectedOrder.items.some(i => i.selected);
 
         $scope.selectReason = r => $scope.returnData.reason = r.value;
         $scope.getReasonLabel = val =>
           ($scope.returnReasons.find(r=>r.value===val)||{}).label;
 
         $scope.getOrderTotal = o => {
-          const itemsTotal = o.items.reduce((sum,i)=>sum+i.price*i.quantity,0);
-          const shippingCost = o.shipping.method==='standard'?5.99:
-                               o.shipping.method==='express'?12.99:24.99;
-          return itemsTotal*1.06 + shippingCost;
+          const itemsTotal = o.items.reduce((sum,i)=>sum + i.price*i.quantity,0);
+          const ship = o.shipping.method==='standard'?5.99:
+                       o.shipping.method==='express'?12.99:24.99;
+          return itemsTotal*1.06 + ship;
         };
 
         $scope.submitReturn = () => {
@@ -226,6 +208,7 @@
   </script>
 </body>
 </html>
+
 
 
 
