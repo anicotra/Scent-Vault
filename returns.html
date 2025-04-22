@@ -42,7 +42,6 @@
     <div class="step-section" ng-class="{active: currentStep===1}">
       <h4>1. Find Your Order</h4>
       <div class="mb-3">
-        <input ng-model="search.email" type="email" class="form-control mb-2" placeholder="Email Address">
         <input ng-model="search.orderNumber" type="text" class="form-control" placeholder="Confirmation Number">
       </div>
       <button class="btn btn-primary" ng-click="findOrders()">Find Orders</button>
