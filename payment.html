@@ -254,39 +254,38 @@
                };
                
                // Submit order
-               $scope.submitOrder = function () {
-  const tempOrder = JSON.parse(localStorage.getItem("tempOrder")) || {};
-  const cart = $scope.cart;
-
-  const fullOrder = {
-    confirmation: 'SCV-' + Date.now().toString().slice(-8),
-    date: new Date().toISOString(),
-    shopper: JSON.parse(localStorage.getItem("shoppers"))?.slice(-1)[0] || {},
-    shipping: tempOrder.shipping || {},
-    billing: {
-      address: $scope.billingAddress,
-      payment: {
-        method: $scope.payment.method,
-        lastFour: $scope.payment.cardNumber.slice(-4)
-      }
-    },
-    cart: cart,
-    subtotal: $scope.calculateSubtotal(),
-    tax: $scope.calculateTax(),
-    shippingCost: $scope.shippingCost,
-    total: $scope.calculateTotal()
-  };
-
-  const orders = JSON.parse(localStorage.getItem("orders")) || [];
-  orders.push(fullOrder);
-  localStorage.setItem("orders", JSON.stringify(orders));
-  localStorage.setItem("latestOrder", JSON.stringify(fullOrder));
-
-  localStorage.removeItem("tempOrder");
-  localStorage.removeItem("cart");
-
-  window.location.href = "confirmation.html";
-};
+               $scope.submitOrder = function() {
+                  // Validate form
+                  if (!$scope.billingAddress.firstName || !$scope.billingAddress.lastName) {
+                     alert('Please fill out all required billing information');
+                     return;
+                  }
+                  
+                  if ($scope.payment.method === 'credit' && 
+                        (!$scope.payment.cardNumber || !$scope.payment.cardExpiry || !$scope.payment.cardCvv)) {
+                     alert('Please fill out all required card details');
+                     return;
+                  }   
+                   
+                  const orderData = {
+                  confirmation: 'SCV-' + Date.now().toString().slice(-8),
+                  date: new Date().toISOString(),
+                  shipping: $scope.shippingData,
+                  billing: {
+                  address: $scope.billingAddress,
+                  payment: {
+                  method: $scope.payment.method,
+                  // Save last 4 digits if credit card
+                  lastFour: $scope.payment.method === 'credit' ?
+                  $scope.payment.cardNumber.slice(-4) : null
+                  }
+                  },
+                  items: $scope.cart,
+                  subtotal: $scope.calculateSubtotal(),
+                  tax: $scope.calculateTax(),
+                  shippingCost: $scope.shippingCost,
+                  total: $scope.calculateTotal()
+                  };
                   
                   // Save all data to localStorage
                   localStorage.setItem('currentOrder', JSON.stringify(orderData));
