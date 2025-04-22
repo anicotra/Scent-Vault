@@ -3,33 +3,49 @@
 <head>
   <meta charset="UTF-8">
   <title>Returns Center | Scent Vault</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
   <!-- AngularJS -->
   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+
   <style>
     body { padding: 20px; }
+
+    /* only show the active step */
+    .step-section { display: none; }
+    .step-section.active { display: block; }
+
     .order-card {
-      padding: 15px; margin-bottom: 10px;
-      border: 1px solid #ddd; border-radius: 5px;
+      padding: 15px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
       cursor: pointer;
     }
     .order-card.selected {
       border-color: #0d6efd;
       background-color: #f8f9fa;
     }
+
     .reason-option {
-      padding: 10px 15px; margin: 5px;
-      border: 1px solid #ddd; border-radius: 5px;
+      padding: 10px 15px;
+      margin: 5px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
       cursor: pointer;
+      display: inline-block;
     }
     .reason-option.selected {
       border-color: #0d6efd;
       background-color: #f8f9fa;
     }
+
     .product-img {
-      width: 60px; height: 60px;
+      width: 60px;
+      height: 60px;
       object-fit: cover;
       border-radius: 4px;
       margin-right: 10px;
@@ -82,7 +98,13 @@
       <div class="table-responsive mb-3">
         <table class="table">
           <thead>
-            <tr><th></th><th>Image</th><th>Product</th><th>Price</th><th>Qty</th></tr>
+            <tr>
+              <th></th>
+              <th>Image</th>
+              <th>Product</th>
+              <th>Price</th>
+              <th>Qty</th>
+            </tr>
           </thead>
           <tbody>
             <tr ng-repeat="item in selectedOrder.items">
@@ -160,12 +182,12 @@
         ];
         $scope.returnData = { reason: '', details: '' };
 
-        $scope.goToStep = step => $scope.currentStep = step;
+        $scope.goToStep = s => $scope.currentStep = s;
 
         $scope.findOrders = () => {
-          const all = JSON.parse(localStorage.getItem('orders') || '[]');
-          const e = $scope.search.email.trim().toLowerCase();
-          const n = $scope.search.orderNumber.trim();
+          const all = JSON.parse(localStorage.getItem('orders')||'[]');
+          const e   = $scope.search.email.trim().toLowerCase();
+          const n   = $scope.search.orderNumber.trim();
           $scope.orders = all.filter(o => {
             const emailMatch = e && (o.shipping.address.email||'').toLowerCase().includes(e);
             const numMatch   = n && o.confirmationNumber===n;
@@ -176,25 +198,24 @@
 
         $scope.selectOrder = o => {
           $scope.selectedOrder = angular.copy(o);
-          $scope.selectedOrder.items.forEach(i => {
+          $scope.selectedOrder.items.forEach(i=>{
             i.selected = false;
             i.returnQty = i.quantity;
           });
         };
 
-        $scope.getArray = n => Array.from({length:n},(_,i)=>i+1);
-        $scope.hasSelectedItems = () =>
-          $scope.selectedOrder.items.some(i => i.selected);
+        $scope.getArray = n => Array.from({length:n}, (_,i)=>i+1);
+        $scope.hasSelectedItems = () => $scope.selectedOrder.items.some(i=>i.selected);
 
         $scope.selectReason = r => $scope.returnData.reason = r.value;
-        $scope.getReasonLabel = val =>
-          ($scope.returnReasons.find(r=>r.value===val)||{}).label;
+        $scope.getReasonLabel = v =>
+          ($scope.returnReasons.find(r=>r.value===v)||{}).label;
 
         $scope.getOrderTotal = o => {
-          const itemsTotal = o.items.reduce((sum,i)=>sum + i.price*i.quantity,0);
-          const ship = o.shipping.method==='standard'?5.99:
-                       o.shipping.method==='express'?12.99:24.99;
-          return itemsTotal*1.06 + ship;
+          const itemsSum = o.items.reduce((s,i)=>s+i.price*i.quantity, 0);
+          const ship     = o.shipping.method==='standard'?5.99:
+                           o.shipping.method==='express'?12.99:24.99;
+          return itemsSum*1.06 + ship;
         };
 
         $scope.submitReturn = () => {
@@ -208,6 +229,7 @@
   </script>
 </body>
 </html>
+
 
 
 
