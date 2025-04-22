@@ -129,7 +129,8 @@
       <script>
          document.addEventListener('DOMContentLoaded', function() {
          // Get order data from localStorage
-         const order = JSON.parse(localStorage.getItem('shippingData')) || {};
+         const order = JSON.parse(localStorage.getItem("latestOrder")) || {};
+
          const paymentData = JSON.parse(localStorage.getItem('paymentData')) || {};
          
          // Display confirmation number
