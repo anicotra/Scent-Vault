@@ -153,39 +153,35 @@
           const all = JSON.parse(localStorage.getItem('orders') || '[]');
           const e = $scope.search.email.trim().toLowerCase();
           const n = $scope.search.orderNumber.trim();
-          $scope.orders = all.filter(o =>
-            o.shipping.address.email.toLowerCase() === e ||
-            o.confirmationNumber === n
-          );
+          $scope.orders = all.filter(o => {
+            const emailMatch = e ? (o.shipping.address.email||'').toLowerCase().includes(e) : false;
+            const numMatch   = n ? o.confirmationNumber===n : false;
+            return emailMatch || numMatch;
+          });
           $scope.goToStep(2);
         };
 
         $scope.selectOrder = o => {
           $scope.selectedOrder = angular.copy(o);
-          $scope.selectedOrder.items.forEach(i => {
-            i.selected = false;
-            i.returnQty = i.quantity;
-          });
+          $scope.selectedOrder.items.forEach(i => { i.selected=false; i.returnQty = i.quantity; });
         };
 
-        $scope.getArray = n => Array.from({ length: n }, (_, i) => i + 1);
-        $scope.hasSelectedItems = () =>
-          $scope.selectedOrder.items.some(i => i.selected);
+        $scope.getArray = n => Array.from({ length: n }, (_, i) => i+1);
+        $scope.hasSelectedItems = () => $scope.selectedOrder.items.some(i=>i.selected);
 
         $scope.selectReason = r => $scope.returnData.reason = r.value;
-        $scope.getReasonLabel = val =>
-          ($scope.returnReasons.find(r => r.value === val) || {}).label;
+        $scope.getReasonLabel = val => ($scope.returnReasons.find(r=>r.value===val)||{}).label;
 
         $scope.getOrderTotal = o =>
-          o.items.reduce((sum, i) => sum + i.price * i.quantity, 0) * 1.06 +
-          (o.shipping.method === 'standard' ? 5.99 : o.shipping.method === 'express' ? 12.99 : 24.99);
+          o.items.reduce((sum,i)=>sum + i.price*i.quantity, 0)*1.06 +
+          (o.shipping.method==='standard'?5.99:(o.shipping.method==='express'?12.99:24.99));
 
         $scope.submitReturn = () => {
           alert('Return submitted!');
           $scope.goToStep(1);
-          $scope.search = { email: '', orderNumber: '' };
+          $scope.search = { email:'', orderNumber:'' };
           $scope.selectedOrder = null;
-          $scope.returnData = { reason: '', details: '' };
+          $scope.returnData = { reason:'', details:'' };
         };
       }]);
   </script>
