@@ -166,67 +166,88 @@
   </div>
 
   <script>
-    angular.module('returnsApp', [])
-      .controller('ReturnsController', ['$scope', function($scope) {
-        $scope.currentStep = 1;
-        $scope.search = { email: '', orderNumber: '' };
-        $scope.orders = [];
+  angular.module('returnsApp', [])
+    .controller('ReturnsController', ['$scope', function($scope) {
+      $scope.currentStep = 1;
+      $scope.search = { email: '', orderNumber: '' };
+      $scope.orders = [];
+      $scope.selectedOrder = null;
+      $scope.returnReasons = [
+        {value:'wrong-item',label:'Wrong Item Received'},
+        {value:'defective',label:'Defective/Damaged'},
+        {value:'not-as-described',label:'Not As Described'},
+        {value:'no-longer-needed',label:'No Longer Needed'},
+        {value:'better-price',label:'Found Better Price'},
+        {value:'other',label:'Other'}
+      ];
+      $scope.returnData = { reason: '', details: '' };
+
+      $scope.goToStep = s => $scope.currentStep = s;
+
+      $scope.findOrders = () => {
+        const allRaw = localStorage.getItem('orders');
+        let all = [];
+        try {
+          all = JSON.parse(allRaw) || [];
+        } catch(e) {
+          console.error('Could not parse orders JSON:', allRaw);
+        }
+        const e = $scope.search.email.trim().toLowerCase();
+        const n = $scope.search.orderNumber.trim();
+        if (!e && !n) {
+          alert('Please enter either an email or a confirmation number.');
+          return;
+        }
+        $scope.orders = all.filter(o => {
+          // try several common paths for the stored email
+          const storedEmail = (
+            (o.shipping && o.shipping.address && o.shipping.address.email) ||
+            o.email ||
+            (o.shipping && o.shipping.email) ||
+            ''
+          ).toLowerCase();
+          const emailMatch = e && storedEmail.includes(e);
+          const numMatch   = n && o.confirmationNumber === n;
+          return emailMatch || numMatch;
+        });
+        $scope.goToStep(2);
+      };
+
+      $scope.selectOrder = o => {
+        $scope.selectedOrder = angular.copy(o);
+        $scope.selectedOrder.items.forEach(i=>{
+          i.selected = false;
+          i.returnQty = i.quantity;
+        });
+      };
+
+      $scope.getArray = n => Array.from({length:n},(_,i)=>i+1);
+      $scope.hasSelectedItems = () =>
+        $scope.selectedOrder.items.some(i => i.selected);
+
+      $scope.selectReason = r => $scope.returnData.reason = r.value;
+      $scope.getReasonLabel = v =>
+        ($scope.returnReasons.find(r=>r.value===v)||{}).label;
+
+      $scope.getOrderTotal = o => {
+        const sumItems = o.items.reduce((s,i)=>s+i.price*i.quantity,0);
+        const shipCost = o.shipping && o.shipping.method==='express'
+          ? 12.99
+          : o.shipping && o.shipping.method==='standard'
+            ? 5.99
+            : 24.99;
+        return sumItems * 1.06 + shipCost;
+      };
+
+      $scope.submitReturn = () => {
+        alert('Return submitted!');
+        $scope.search = { email:'', orderNumber:'' };
         $scope.selectedOrder = null;
-        $scope.returnReasons = [
-          {value:'wrong-item',label:'Wrong Item Received'},
-          {value:'defective',label:'Defective/Damaged'},
-          {value:'not-as-described',label:'Not As Described'},
-          {value:'no-longer-needed',label:'No Longer Needed'},
-          {value:'better-price',label:'Found Better Price'},
-          {value:'other',label:'Other'}
-        ];
-        $scope.returnData = { reason: '', details: '' };
-
-        $scope.goToStep = s => $scope.currentStep = s;
-
-        $scope.findOrders = () => {
-          const all = JSON.parse(localStorage.getItem('orders')||'[]');
-          const e   = $scope.search.email.trim().toLowerCase();
-          const n   = $scope.search.orderNumber.trim();
-          $scope.orders = all.filter(o => {
-            const emailMatch = e && (o.shipping.address.email||'').toLowerCase().includes(e);
-            const numMatch   = n && o.confirmationNumber===n;
-            return emailMatch || numMatch;
-          });
-          $scope.goToStep(2);
-        };
-
-        $scope.selectOrder = o => {
-          $scope.selectedOrder = angular.copy(o);
-          $scope.selectedOrder.items.forEach(i=>{
-            i.selected = false;
-            i.returnQty = i.quantity;
-          });
-        };
-
-        $scope.getArray = n => Array.from({length:n}, (_,i)=>i+1);
-        $scope.hasSelectedItems = () => $scope.selectedOrder.items.some(i=>i.selected);
-
-        $scope.selectReason = r => $scope.returnData.reason = r.value;
-        $scope.getReasonLabel = v =>
-          ($scope.returnReasons.find(r=>r.value===v)||{}).label;
-
-        $scope.getOrderTotal = o => {
-          const itemsSum = o.items.reduce((s,i)=>s+i.price*i.quantity, 0);
-          const ship     = o.shipping.method==='standard'?5.99:
-                           o.shipping.method==='express'?12.99:24.99;
-          return itemsSum*1.06 + ship;
-        };
-
-        $scope.submitReturn = () => {
-          alert('Return submitted!');
-          $scope.search = { email:'', orderNumber:'' };
-          $scope.selectedOrder = null;
-          $scope.returnData = { reason:'', details:'' };
-          $scope.goToStep(1);
-        };
-      }]);
-  </script>
+        $scope.returnData = { reason:'', details:'' };
+        $scope.goToStep(1);
+      };
+    }]);
+</script>
 </body>
 </html>
 
