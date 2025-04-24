@@ -58,17 +58,17 @@
 
       <div class="mb-3">
         <p class="label">Shipping Info:</p>
-        <div class="shipping-line">First Name: {{order.shipping.firstName}}</div>
-        <div class="shipping-line">Last Name: {{order.shipping.lastName}}</div>
-        <div class="shipping-line">Address: {{order.shipping.address}}</div>
-        <div class="shipping-line">City: {{order.shipping.city}}</div>
-        <div class="shipping-line">State: {{order.shipping.state}}</div>
-        <div class="shipping-line">Zip Code: {{order.shipping.zipCode}}</div>
-        <div class="shipping-line">Email: {{order.shipping.email}}</div>
+        <div class="shipping-line"><strong>First Name:</strong> {{order.shippingParsed.firstName}}</div>
+        <div class="shipping-line"><strong>Last Name:</strong> {{order.shippingParsed.lastName}}</div>
+        <div class="shipping-line"><strong>Address:</strong> {{order.shippingParsed.address}}</div>
+        <div class="shipping-line"><strong>City:</strong> {{order.shippingParsed.city}}</div>
+        <div class="shipping-line"><strong>State:</strong> {{order.shippingParsed.state}}</div>
+        <div class="shipping-line"><strong>Zip Code:</strong> {{order.shippingParsed.zipCode}}</div>
+        <div class="shipping-line"><strong>Email:</strong> {{order.shippingParsed.email}}</div>
       </div>
 
       <p><span class="label">Carrier:</span> {{order.carrier}}<br>
-         <span class="label">Speed:</span> {{order.speed}}</p>
+        <span class="label">Speed:</span> {{order.speed}}</p>
 
       <hr>
 
@@ -99,31 +99,30 @@
             return;
           }
 
-          // FULL FIX: Parse shipping if stored as string
-          let shipping = raw.shipping || {};
-          if (typeof shipping === 'string') {
-            try {
-              shipping = JSON.parse(shipping);
-            } catch (e) {
-              shipping = {};
-            }
+          let shippingParsed = {};
+          try {
+            shippingParsed = typeof raw.shipping === 'string'
+              ? JSON.parse(raw.shipping)
+              : raw.shipping;
+          } catch (e) {
+            shippingParsed = {};
           }
 
           $scope.order = {
             confirmationNumber: raw.confirmation || 'SCV-' + Date.now(),
             date: new Date(raw.date || Date.now()),
             total: raw.total || 0,
-            shipping: {
-              firstName: shipping.firstName || '',
-              lastName: shipping.lastName || '',
-              address: shipping.address || '',
-              city: shipping.city || '',
-              state: shipping.state || '',
-              zipCode: shipping.zipCode || '',
-              email: shipping.email || ''
+            shippingParsed: {
+              firstName: shippingParsed.firstName || '',
+              lastName: shippingParsed.lastName || '',
+              address: shippingParsed.address || '',
+              city: shippingParsed.city || '',
+              state: shippingParsed.state || '',
+              zipCode: shippingParsed.zipCode || '',
+              email: shippingParsed.email || ''
             },
-            carrier: raw.carrier || shipping.carrier || 'Standard',
-            speed: raw.speed || shipping.speed || 'Normal',
+            carrier: raw.carrier || shippingParsed.carrier || 'Standard',
+            speed: raw.speed || shippingParsed.speed || 'Normal',
             items: (raw.items || raw.cartItems || []).map(item => ({
               name: item.name || 'Unnamed',
               price: item.price || 0,
@@ -133,9 +132,10 @@
           };
         };
 
-        $scope.loadOrder(); // Run once on page load
+        $scope.loadOrder();
       }]);
   </script>
 </body>
 
 </html>
+
