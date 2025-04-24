@@ -65,7 +65,6 @@
         <div class="shipping-line">State: {{order.shipping.state}}</div>
         <div class="shipping-line">Zip Code: {{order.shipping.zipCode}}</div>
         <div class="shipping-line">Email: {{order.shipping.email}}</div>
-        <div class="shipping-line">Saved Address: {{order.shipping.saveAddress ? 'Yes' : 'No'}}</div>
       </div>
 
       <p><span class="label">Carrier:</span> {{order.carrier}}<br>
@@ -100,13 +99,23 @@
             return;
           }
 
+          const shipping = raw.shipping || {};
+
           $scope.order = {
             confirmationNumber: raw.confirmation || 'SCV-' + Date.now(),
             date: new Date(raw.date || Date.now()),
             total: raw.total || 0,
-            shipping: raw.shipping || {},
-            carrier: raw.carrier || raw.shipping?.carrier || 'Standard',
-            speed: raw.speed || raw.shipping?.speed || 'Normal',
+            shipping: {
+              firstName: shipping.firstName || '',
+              lastName: shipping.lastName || '',
+              address: shipping.address || '',
+              city: shipping.city || '',
+              state: shipping.state || '',
+              zipCode: shipping.zipCode || '',
+              email: shipping.email || ''
+            },
+            carrier: raw.carrier || shipping.carrier || 'Standard',
+            speed: raw.speed || shipping.speed || 'Normal',
             items: (raw.items || raw.cartItems || []).map(item => ({
               name: item.name || 'Unnamed',
               price: item.price || 0,
