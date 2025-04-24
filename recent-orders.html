@@ -56,16 +56,16 @@
       <h5 class="mb-3">Order #{{order.confirmationNumber || 'N/A'}}</h5>
       <p><span class="label">Placed on:</span> {{order.date | date:'fullDate'}} at {{order.date | date:'shortTime'}}</p>
 
-      <div class="mb-3">
-        <p class="label">Shipping Info:</p>
-        <div class="shipping-line"><strong>First Name:</strong> {{order.shippingParsed.firstName}}</div>
-        <div class="shipping-line"><strong>Last Name:</strong> {{order.shippingParsed.lastName}}</div>
-        <div class="shipping-line"><strong>Address:</strong> {{order.shippingParsed.address}}</div>
-        <div class="shipping-line"><strong>City:</strong> {{order.shippingParsed.city}}</div>
-        <div class="shipping-line"><strong>State:</strong> {{order.shippingParsed.state}}</div>
-        <div class="shipping-line"><strong>Zip Code:</strong> {{order.shippingParsed.zipCode}}</div>
-        <div class="shipping-line"><strong>Email:</strong> {{order.shippingParsed.email}}</div>
-      </div>
+     <div class="mb-3">
+  <p class="label">Shipping Info:</p>
+  <div class="shipping-line"><strong>First Name:</strong> {{order.shippingParsed.firstName || 'N/A'}}</div>
+  <div class="shipping-line"><strong>Last Name:</strong> {{order.shippingParsed.lastName || 'N/A'}}</div>
+  <div class="shipping-line"><strong>Address:</strong> {{order.shippingParsed.address || 'N/A'}}</div>
+  <div class="shipping-line"><strong>City:</strong> {{order.shippingParsed.city || 'N/A'}}</div>
+  <div class="shipping-line"><strong>State:</strong> {{order.shippingParsed.state || 'N/A'}}</div>
+  <div class="shipping-line"><strong>Zip Code:</strong> {{order.shippingParsed.zipCode || 'N/A'}}</div>
+  <div class="shipping-line"><strong>Email:</strong> {{order.shippingParsed.email || 'N/A'}}</div>
+</div>
 
       <p><span class="label">Carrier:</span> {{order.carrier}}<br>
         <span class="label">Speed:</span> {{order.speed}}</p>
@@ -100,31 +100,49 @@
             return;
           }
 
-          let shippingParsed = {};
-          
-          // Special handling for the address format in your screenshot
-          if (raw.address && raw.address.startsWith('("firstName":')) {
+          // Initialize shippingParsed with empty values
+          let shippingParsed = {
+            firstName: '',
+            lastName: '',
+            address: '',
+            city: '',
+            state: '',
+            zipCode: '',
+            email: ''
+          };
+
+          // Check if shipping info is in the address field (your specific case)
+          if (raw.address && raw.address.includes('firstName')) {
             try {
-              // Clean up the string to make it valid JSON
-              const jsonStr = raw.address
-                .replace(/^\(/, '{')  // Replace starting ( with {
-                .replace(/\)$/, '}')  // Replace ending ) with }
-                .replace(/"\s*:\s*"/g, '":"')  // Fix colon spacing
-                .replace(/"\s*,\s*"/g, '","'); // Fix comma spacing
+              // Clean and parse the address string
+              const cleanString = raw.address
+                .replace(/^\(/, '{')
+                .replace(/\)$/, '}')
+                .replace(/"\s*:\s*"/g, '":"')
+                .replace(/"\s*,\s*"/g, '","');
               
-              shippingParsed = JSON.parse(jsonStr);
+              const parsed = JSON.parse(cleanString);
+              shippingParsed = {
+                firstName: parsed.firstName || '',
+                lastName: parsed.lastName || '',
+                address: parsed.address || '',
+                city: parsed.city || '',
+                state: parsed.state || '',
+                zipCode: parsed.zipCode || '',
+                email: parsed.email || ''
+              };
             } catch (e) {
               console.error('Error parsing shipping info:', e);
-              shippingParsed = {};
             }
-          } else {
-            // Normal shipping info parsing
+          }
+          // If normal shipping info exists
+          else if (raw.shipping) {
             try {
-              shippingParsed = typeof raw.shipping === 'string'
-                ? JSON.parse(raw.shipping)
-                : raw.shipping || {};
+              shippingParsed = typeof raw.shipping === 'string' 
+                ? JSON.parse(raw.shipping) 
+                : raw.shipping;
             } catch (e) {
-              shippingParsed = {};
+              console.error('Error parsing shipping info:', e);
             }
           }
 
@@ -132,17 +150,9 @@
             confirmationNumber: raw.confirmation || 'SCV-' + Date.now(),
             date: new Date(raw.date || Date.now()),
             total: raw.total || 0,
-            shippingParsed: {
-              firstName: shippingParsed.firstName || raw.firstName || '',
-              lastName: shippingParsed.lastName || raw.lastName || '',
-              address: shippingParsed.address || raw.address || '',
-              city: shippingParsed.city || raw.city || '',
-              state: shippingParsed.state || raw.state || '',
-              zipCode: shippingParsed.zipCode || raw.zipCode || '',
-              email: shippingParsed.email || raw.email || ''
-            },
-            carrier: raw.carrier || shippingParsed.carrier || 'Standard',
-            speed: raw.speed || shippingParsed.speed || 'Normal',
+            shippingParsed: shippingParsed,
+            carrier: raw.carrier || 'Standard',
+            speed: raw.speed || 'Normal',
             items: (raw.items || raw.cartItems || []).map(item => ({
               name: item.name || 'Unnamed',
               price: item.price || 0,
