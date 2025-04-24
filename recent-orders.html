@@ -13,43 +13,67 @@
     }
 
     .order-card {
-      padding: 15px;
-      margin-bottom: 20px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
+      padding: 20px;
+      margin-top: 15px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      background-color: #f9f9f9;
     }
 
     .product-img {
       width: 60px;
       height: 60px;
       object-fit: cover;
-      border-radius: 4px;
+      border-radius: 6px;
       margin-right: 10px;
+    }
+
+    .product-list-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .label {
+      font-weight: bold;
     }
   </style>
 </head>
 
 <body ng-controller="OrdersController">
   <div class="container">
-    <h2>Recent Order</h2>
+    <h2 class="mb-4">Recent Order</h2>
     <div class="mb-3 d-flex gap-2">
       <a href="index.html" class="btn btn-outline-secondary">Back to Home</a>
       <button class="btn btn-primary" ng-click="loadOrder()">Refresh Orders</button>
     </div>
 
     <div class="order-card" ng-if="order">
-      <h5>Order #{{order.confirmationNumber || 'N/A'}}</h5>
-      <p><strong>Placed on:</strong> {{order.date | date:'medium'}}</p>
-      <p><strong>Shipping:</strong> {{order.shippingAddress}}<br>
-        <strong>Carrier:</strong> {{order.carrier}}<br>
-        <strong>Speed:</strong> {{order.speed}}</p>
-      <p><strong>Items:</strong></p>
-      <ul>
-        <li ng-repeat="item in order.items">
-          <img ng-src="{{item.image}}" class="product-img">{{item.name}} - ${{item.price}} (x{{item.quantity}})
-        </li>
-      </ul>
-      <p><strong>Total:</strong> ${{order.total}}</p>
+      <h5 class="mb-3">Order #{{order.confirmationNumber || 'N/A'}}</h5>
+      <p><span class="label">Placed on:</span> {{order.date | date:'fullDate'}} at {{order.date | date:'shortTime'}}</p>
+
+      <div class="mb-3">
+        <p class="label">Shipping Info:</p>
+        <p class="mb-1">{{order.shipping.firstName}} {{order.shipping.lastName}}</p>
+        <p class="mb-1">{{order.shipping.address}}, {{order.shipping.city}}, {{order.shipping.state}} {{order.shipping.zipCode}}</p>
+        <p class="mb-1">Email: {{order.shipping.email}}</p>
+      </div>
+
+      <p><span class="label">Carrier:</span> {{order.carrier}}<br>
+         <span class="label">Speed:</span> {{order.speed}}</p>
+
+      <hr>
+
+      <p class="label">Items:</p>
+      <div ng-repeat="item in order.items" class="product-list-item">
+        <img ng-src="{{item.image}}" class="product-img">
+        <div>
+          {{item.name}} - ${{item.price}} (x{{item.quantity}})
+        </div>
+      </div>
+
+      <hr>
+      <h5>Total: ${{order.total}}</h5>
     </div>
 
     <div ng-if="!order">
@@ -71,7 +95,7 @@
             confirmationNumber: raw.confirmation || 'SCV-' + Date.now(),
             date: new Date(raw.date || Date.now()),
             total: raw.total || 0,
-            shippingAddress: raw.shipping?.address || raw.shippingAddress || 'Unknown',
+            shipping: raw.shipping || {},
             carrier: raw.carrier || raw.shipping?.carrier || 'Standard',
             speed: raw.speed || raw.shipping?.speed || 'Normal',
             items: (raw.items || raw.cartItems || []).map(item => ({
@@ -83,7 +107,7 @@
           };
         };
 
-        // Load on page load
+        // Initial load
         $scope.loadOrder();
       }]);
   </script>
