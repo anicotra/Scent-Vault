@@ -33,10 +33,6 @@
     .label {
       font-weight: bold;
     }
-    .shipping-line {
-      margin-bottom: 4px;
-      white-space: pre-line;
-    }
   </style>
 </head>
 
@@ -54,17 +50,17 @@
 
       <div class="mb-3">
         <p class="label">Shipping Info:</p>
-        <div class="shipping-line"><strong>First Name:</strong> {{order.firstName}}</div>
-        <div class="shipping-line"><strong>Last Name:</strong> {{order.lastName}}</div>
-        <div class="shipping-line"><strong>Address:</strong> {{order.address}}</div>
-        <div class="shipping-line"><strong>City:</strong> {{order.city}}</div>
-        <div class="shipping-line"><strong>State:</strong> {{order.state}}</div>
-        <div class="shipping-line"><strong>Zip Code:</strong> {{order.zipCode}}</div>
-        <div class="shipping-line"><strong>Email:</strong> {{order.email}}</div>
+        <p><span class="label">First Name:</span> {{order.firstName || 'N/A'}}</p>
+        <p><span class="label">Last Name:</span> {{order.lastName || 'N/A'}}</p>
+        <p><span class="label">Address:</span> {{order.address || 'N/A'}}</p>
+        <p><span class="label">City:</span> {{order.city || 'N/A'}}</p>
+        <p><span class="label">State:</span> {{order.state || 'N/A'}}</p>
+        <p><span class="label">Zip Code:</span> {{order.zipCode || 'N/A'}}</p>
+        <p><span class="label">Email:</span> {{order.email || 'N/A'}}</p>
       </div>
 
-      <p><span class="label">Carrier:</span> {{order.carrier || 'N/A'}}<br>
-        <span class="label">Speed:</span> {{order.speed || 'N/A'}}</p>
+      <p><span class="label">Carrier:</span> {{order.carrier || 'N/A'}}</p>
+      <p><span class="label">Speed:</span> {{order.speed || 'N/A'}}</p>
 
       <hr>
 
@@ -88,28 +84,15 @@
   <script>
     angular.module('ordersApp', [])
       .controller('OrdersController', ['$scope', function ($scope) {
-        $scope.shipping = {
-          firstName: '',
-          lastName: '',
-          address: '',
-          city: '',
-          state: '',
-          zipCode: '',
-          email: ''
-        };
-
-        function extractShippingInfo(data) {
+        function parseShippingData(addressString) {
           try {
-            if (data.address && data.address.includes('firstName')) {
-              // Clean and parse the address string
-              const cleanStr = data.address
-                .replace(/^\(/, '{')
-                .replace(/\)$/, '}')
-                .replace(/"\s*:\s*"/g, '":"')
-                .replace(/"\s*,\s*"/g, '","');
-              return JSON.parse(cleanStr);
-            }
-            return data.shipping || {};
+            if (!addressString) return {};
+            const cleanStr = addressString
+              .replace(/^\(/, '{')
+              .replace(/\)$/, '}')
+              .replace(/"\s*:\s*"/g, '":"')
+              .replace(/"\s*,\s*"/g, '","');
+            return JSON.parse(cleanStr);
           } catch (e) {
             console.error('Error parsing shipping info:', e);
             return {};
@@ -123,22 +106,20 @@
             return;
           }
 
-          // Extract shipping info
-          const shippingData = extractShippingInfo(raw);
-          $scope.shipping = {
-            firstName: shippingData.firstName || 'N/A',
-            lastName: shippingData.lastName || 'N/A',
-            address: shippingData.address || 'N/A',
-            city: shippingData.city || 'N/A',
-            state: shippingData.state || 'N/A',
-            zipCode: shippingData.zipCode || 'N/A',
-            email: shippingData.email || 'N/A'
-          };
-
+          // Parse shipping info
+          const shippingData = parseShippingData(raw.address);
+          
           $scope.order = {
             confirmationNumber: raw.confirmation || 'SCV-' + Date.now(),
             date: new Date(raw.date || Date.now()),
             total: raw.total || 0,
+            firstName: shippingData.firstName || raw.firstName || 'N/A',
+            lastName: shippingData.lastName || raw.lastName || 'N/A',
+            address: shippingData.address || raw.address || 'N/A',
+            city: shippingData.city || raw.city || 'N/A',
+            state: shippingData.state || raw.state || 'N/A',
+            zipCode: shippingData.zipCode || raw.zipCode || 'N/A',
+            email: shippingData.email || raw.email || 'N/A',
             carrier: raw.carrier || 'Standard',
             speed: raw.speed || 'Normal',
             items: (raw.items || raw.cartItems || []).map(item => ({
@@ -151,7 +132,7 @@
         };
 
         $scope.loadOrder();
-      }]);
+      }];
   </script>
 </body>
 </html>
