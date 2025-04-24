@@ -35,6 +35,7 @@
     }
     .shipping-line {
       margin-bottom: 4px;
+      white-space: pre-line;
     }
   </style>
 </head>
@@ -53,15 +54,14 @@
 
       <div class="mb-3">
         <p class="label">Shipping Info:</p>
-        <div class="shipping-line"><strong>First Name:</strong> {{shipping.firstName || 'N/A'}}</div>
-        <div class="shipping-line"><strong>Last Name:</strong> {{shipping.lastName || 'N/A'}}</div>
-        <div class="shipping-line"><strong>Address:</strong> {{shipping.address || 'N/A'}}</div>
-        <div class="shipping-line"><strong>City:</strong> {{shipping.city || 'N/A'}}</div>
-        <div class="shipping-line"><strong>State:</strong> {{shipping.state || 'N/A'}}</div>
-        <div class="shipping-line"><strong>Zip Code:</strong> {{shipping.zipCode || 'N/A'}}</div>
-        <div class="shipping-line"><strong>Email:</strong> {{shipping.email || 'N/A'}}</div>
+        <div class="shipping-line"><strong>First Name:</strong> {{shipping.firstName}}</div>
+        <div class="shipping-line"><strong>Last Name:</strong> {{shipping.lastName}}</div>
+        <div class="shipping-line"><strong>Address:</strong> {{shipping.address}}</div>
+        <div class="shipping-line"><strong>City:</strong> {{shipping.city}}</div>
+        <div class="shipping-line"><strong>State:</strong> {{shipping.state}}</div>
+        <div class="shipping-line"><strong>Zip Code:</strong> {{shipping.zipCode}}</div>
+        <div class="shipping-line"><strong>Email:</strong> {{shipping.email}}</div>
       </div>
-
 
       <p><span class="label">Carrier:</span> {{order.carrier || 'N/A'}}<br>
         <span class="label">Speed:</span> {{order.speed || 'N/A'}}</p>
@@ -85,21 +85,31 @@
     </div>
   </div>
 
-  
-    <script>
+  <script>
     angular.module('ordersApp', [])
       .controller('OrdersController', ['$scope', function ($scope) {
-        $scope.shipping = {};
-        
-        function parseShippingData(addressString) {
+        $scope.shipping = {
+          firstName: '',
+          lastName: '',
+          address: '',
+          city: '',
+          state: '',
+          zipCode: '',
+          email: ''
+        };
+
+        function extractShippingInfo(data) {
           try {
-            // Clean the string to make it valid JSON
-            const cleanString = addressString
-              .replace(/^\(/, '{')
-              .replace(/\)$/, '}')
-              .replace(/"\s*:\s*"/g, '":"')
-              .replace(/"\s*,\s*"/g, '","');
-            return JSON.parse(cleanString);
+            if (data.address && data.address.includes('firstName')) {
+              // Clean and parse the address string
+              const cleanStr = data.address
+                .replace(/^\(/, '{')
+                .replace(/\)$/, '}')
+                .replace(/"\s*:\s*"/g, '":"')
+                .replace(/"\s*,\s*"/g, '","');
+              return JSON.parse(cleanStr);
+            }
+            return data.shipping || {};
           } catch (e) {
             console.error('Error parsing shipping info:', e);
             return {};
@@ -113,13 +123,17 @@
             return;
           }
 
-          // Parse shipping info from address field
-          if (raw.address && typeof raw.address === 'string' && raw.address.includes('firstName')) {
-            $scope.shipping = parseShippingData(raw.address);
-          } else if (raw.shipping) {
-            $scope.shipping = typeof raw.shipping === 'string' ? 
-              JSON.parse(raw.shipping) : raw.shipping;
-          }
+          // Extract shipping info
+          const shippingData = extractShippingInfo(raw);
+          $scope.shipping = {
+            firstName: shippingData.firstName || 'N/A',
+            lastName: shippingData.lastName || 'N/A',
+            address: shippingData.address || 'N/A',
+            city: shippingData.city || 'N/A',
+            state: shippingData.state || 'N/A',
+            zipCode: shippingData.zipCode || 'N/A',
+            email: shippingData.email || 'N/A'
+          };
 
           $scope.order = {
             confirmationNumber: raw.confirmation || 'SCV-' + Date.now(),
