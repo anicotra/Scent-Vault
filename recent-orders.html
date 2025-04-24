@@ -101,27 +101,31 @@
           }
 
           let shippingParsed = {};
-          try {
-            // Parse shipping info whether it comes as a string or object
-            if (typeof raw.shipping === 'string') {
-              // Handle cases where shipping might be a JSON string or the format shown in your screenshot
-              if (raw.shipping.startsWith('("')) {
-                // Clean up the string to make it valid JSON
-                const cleaned = raw.shipping
-                  .replace(/^\(\"/, '{"')  // Replace starting (" with {"
-                  .replace(/\"\)$/, '"}')  // Replace ending ") with "}
-                  .replace(/\"\:\"/g, '":"')  // Fix colon spacing
-                  .replace(/\"\,\"/g, '","'); // Fix comma spacing
-                shippingParsed = JSON.parse(cleaned);
-              } else {
-                shippingParsed = JSON.parse(raw.shipping);
-              }
-            } else {
-              shippingParsed = raw.shipping || {};
+          
+          // Special handling for the address format in your screenshot
+          if (raw.address && raw.address.startsWith('("firstName":')) {
+            try {
+              // Clean up the string to make it valid JSON
+              const jsonStr = raw.address
+                .replace(/^\(/, '{')  // Replace starting ( with {
+                .replace(/\)$/, '}')  // Replace ending ) with }
+                .replace(/"\s*:\s*"/g, '":"')  // Fix colon spacing
+                .replace(/"\s*,\s*"/g, '","'); // Fix comma spacing
+              
+              shippingParsed = JSON.parse(jsonStr);
+            } catch (e) {
+              console.error('Error parsing shipping info:', e);
+              shippingParsed = {};
             }
-          } catch (e) {
-            console.error('Error parsing shipping info:', e);
-            shippingParsed = {};
+          } else {
+            // Normal shipping info parsing
+            try {
+              shippingParsed = typeof raw.shipping === 'string'
+                ? JSON.parse(raw.shipping)
+                : raw.shipping || {};
+            } catch (e) {
+              shippingParsed = {};
+            }
           }
 
           $scope.order = {
@@ -131,10 +135,10 @@
             shippingParsed: {
               firstName: shippingParsed.firstName || raw.firstName || '',
               lastName: shippingParsed.lastName || raw.lastName || '',
-              address: shippingParsed.address || '',
-              city: shippingParsed.city || '',
-              state: shippingParsed.state || '',
-              zipCode: shippingParsed.zipCode || '',
+              address: shippingParsed.address || raw.address || '',
+              city: shippingParsed.city || raw.city || '',
+              state: shippingParsed.state || raw.state || '',
+              zipCode: shippingParsed.zipCode || raw.zipCode || '',
               email: shippingParsed.email || raw.email || ''
             },
             carrier: raw.carrier || shippingParsed.carrier || 'Standard',
