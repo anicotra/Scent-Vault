@@ -10,89 +10,123 @@
   <style>
     body {
       padding: 20px;
+      font-family: Arial, sans-serif;
     }
     .order-card {
-      padding: 20px;
-      margin-top: 15px;
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      background-color: #f9f9f9;
+      padding: 25px;
+      margin-top: 20px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      background-color: #ffffff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
-    .product-img {
-      width: 60px;
-      height: 60px;
-      object-fit: cover;
-      border-radius: 6px;
-      margin-right: 10px;
+    .order-header {
+      border-bottom: 1px solid #eee;
+      padding-bottom: 15px;
+      margin-bottom: 20px;
     }
-    .product-list-item {
+    .info-section {
+      margin-bottom: 20px;
+    }
+    .info-label {
+      font-weight: 600;
+      color: #555;
+      display: inline-block;
+      width: 100px;
+    }
+    .info-value {
+      color: #333;
+    }
+    .product-item {
       display: flex;
       align-items: center;
-      margin-bottom: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid #f5f5f5;
     }
-    .label {
+    .product-img {
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 4px;
+      margin-right: 15px;
+    }
+    .total-section {
+      font-size: 1.1em;
       font-weight: bold;
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
     }
   </style>
 </head>
 
 <body ng-controller="OrdersController">
   <div class="container">
-    <h2 class="mb-4">Recent Order</h2>
-    <div class="mb-3 d-flex gap-2">
-      <a href="index.html" class="btn btn-outline-secondary">Back to Home</a>
-      <button class="btn btn-primary" ng-click="loadOrder()">Refresh Orders</button>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2>Recent Order</h2>
+      <div>
+        <a href="index.html" class="btn btn-outline-secondary">Back to Home</a>
+        <button class="btn btn-primary ms-2" ng-click="loadOrder()">Refresh Orders</button>
+      </div>
     </div>
 
     <div class="order-card" ng-if="order">
-      <h5 class="mb-3">Order #{{order.confirmationNumber || 'N/A'}}</h5>
-      <p><span class="label">Placed on:</span> {{order.date | date:'fullDate'}} at {{order.date | date:'shortTime'}}</p>
-
-      <div class="mb-3">
-        <p class="label">Shipping Info:</p>
-        <p><span class="label">First Name:</span> {{order.firstName || 'N/A'}}</p>
-        <p><span class="label">Last Name:</span> {{order.lastName || 'N/A'}}</p>
-        <p><span class="label">Address:</span> {{order.address || 'N/A'}}</p>
-        <p><span class="label">City:</span> {{order.city || 'N/A'}}</p>
-        <p><span class="label">State:</span> {{order.state || 'N/A'}}</p>
-        <p><span class="label">Zip Code:</span> {{order.zipCode || 'N/A'}}</p>
-        <p><span class="label">Email:</span> {{order.email || 'N/A'}}</p>
+      <div class="order-header">
+        <h4>Order #{{order.confirmationNumber || 'N/A'}}</h4>
+        <p class="text-muted">Placed on {{order.date | date:'fullDate'}} at {{order.date | date:'shortTime'}}</p>
       </div>
 
-      <p><span class="label">Carrier:</span> {{order.carrier || 'N/A'}}</p>
-      <p><span class="label">Speed:</span> {{order.speed || 'N/A'}}</p>
+      <div class="info-section">
+        <h5>Shipping Information</h5>
+        <div class="mb-2"><span class="info-label">Name:</span> <span class="info-value">{{order.firstName || 'N/A'}} {{order.lastName || ''}}</span></div>
+        <div class="mb-2"><span class="info-label">Address:</span> <span class="info-value">{{order.address || 'N/A'}}</span></div>
+        <div class="mb-2"><span class="info-label">City:</span> <span class="info-value">{{order.city || 'N/A'}}</span></div>
+        <div class="mb-2"><span class="info-label">State:</span> <span class="info-value">{{order.state || 'N/A'}}</span></div>
+        <div class="mb-2"><span class="info-label">Zip Code:</span> <span class="info-value">{{order.zipCode || 'N/A'}}</span></div>
+        <div class="mb-2"><span class="info-label">Email:</span> <span class="info-value">{{order.email || 'N/A'}}</span></div>
+      </div>
 
-      <hr>
+      <div class="info-section">
+        <h5>Shipping Method</h5>
+        <div class="mb-2"><span class="info-label">Carrier:</span> <span class="info-value">{{order.carrier || 'N/A'}}</span></div>
+        <div><span class="info-label">Speed:</span> <span class="info-value">{{order.speed || 'N/A'}}</span></div>
+      </div>
 
-      <p class="label">Items:</p>
-      <div ng-repeat="item in order.items" class="product-list-item">
-        <img ng-src="{{item.image}}" class="product-img">
-        <div>
-          {{item.name}} - ${{item.price}} (x{{item.quantity}})
+      <div class="info-section">
+        <h5>Order Items</h5>
+        <div ng-repeat="item in order.items" class="product-item">
+          <img ng-src="{{item.image}}" class="product-img" alt="{{item.name}}">
+          <div>
+            <div>{{item.name}}</div>
+            <div class="text-muted">${{item.price}} × {{item.quantity}}</div>
+          </div>
         </div>
       </div>
 
-      <hr>
-      <h5>Total: ${{order.total}}</h5>
+      <div class="total-section text-end">
+        <div>Total: ${{order.total}}</div>
+      </div>
     </div>
 
-    <div ng-if="!order">
-      <p class="text-muted">No recent order found in localStorage.</p>
+    <div class="alert alert-info mt-4" ng-if="!order">
+      No recent order found in localStorage.
     </div>
   </div>
 
   <script>
     angular.module('ordersApp', [])
       .controller('OrdersController', ['$scope', function ($scope) {
-        function parseShippingData(addressString) {
+        function parseShippingData(data) {
           try {
-            if (!addressString) return {};
-            const cleanStr = addressString
-              .replace(/^\(/, '{')
-              .replace(/\)$/, '}')
-              .replace(/"\s*:\s*"/g, '":"')
-              .replace(/"\s*,\s*"/g, '","');
-            return JSON.parse(cleanStr);
+            if (data.address && typeof data.address === 'string') {
+              const cleanStr = data.address
+                .replace(/^\(/, '{')
+                .replace(/\)$/, '}')
+                .replace(/"\s*:\s*"/g, '":"')
+                .replace(/"\s*,\s*"/g, '","');
+              return JSON.parse(cleanStr);
+            }
+            return {};
           } catch (e) {
             console.error('Error parsing shipping info:', e);
             return {};
@@ -106,8 +140,7 @@
             return;
           }
 
-          // Parse shipping info
-          const shippingData = parseShippingData(raw.address);
+          const shippingData = parseShippingData(raw);
           
           $scope.order = {
             confirmationNumber: raw.confirmation || 'SCV-' + Date.now(),
@@ -123,7 +156,7 @@
             carrier: raw.carrier || 'Standard',
             speed: raw.speed || 'Normal',
             items: (raw.items || raw.cartItems || []).map(item => ({
-              name: item.name || 'Unnamed',
+              name: item.name || 'Unnamed Product',
               price: item.price || 0,
               quantity: item.quantity || 1,
               image: item.image || item.img || 'https://via.placeholder.com/60?text=No+Image'
@@ -132,7 +165,7 @@
         };
 
         $scope.loadOrder();
-      }];
+      }]);
   </script>
 </body>
 </html>
