@@ -37,6 +37,10 @@
     .label {
       font-weight: bold;
     }
+
+    .shipping-line {
+      margin-bottom: 4px;
+    }
   </style>
 </head>
 
@@ -54,9 +58,14 @@
 
       <div class="mb-3">
         <p class="label">Shipping Info:</p>
-        <p class="mb-1">{{order.shipping.firstName}} {{order.shipping.lastName}}</p>
-        <p class="mb-1">{{order.shipping.address}}, {{order.shipping.city}}, {{order.shipping.state}} {{order.shipping.zipCode}}</p>
-        <p class="mb-1">Email: {{order.shipping.email}}</p>
+        <div class="shipping-line">First Name: {{order.shipping.firstName}}</div>
+        <div class="shipping-line">Last Name: {{order.shipping.lastName}}</div>
+        <div class="shipping-line">Address: {{order.shipping.address}}</div>
+        <div class="shipping-line">City: {{order.shipping.city}}</div>
+        <div class="shipping-line">State: {{order.shipping.state}}</div>
+        <div class="shipping-line">Zip Code: {{order.shipping.zipCode}}</div>
+        <div class="shipping-line">Email: {{order.shipping.email}}</div>
+        <div class="shipping-line">Saved Address: {{order.shipping.saveAddress ? 'Yes' : 'No'}}</div>
       </div>
 
       <p><span class="label">Carrier:</span> {{order.carrier}}<br>
