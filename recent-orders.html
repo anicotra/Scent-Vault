@@ -11,7 +11,6 @@
     body {
       padding: 20px;
     }
-
     .order-card {
       padding: 20px;
       margin-top: 15px;
@@ -19,7 +18,6 @@
       border-radius: 10px;
       background-color: #f9f9f9;
     }
-
     .product-img {
       width: 60px;
       height: 60px;
@@ -27,17 +25,14 @@
       border-radius: 6px;
       margin-right: 10px;
     }
-
     .product-list-item {
       display: flex;
       align-items: center;
       margin-bottom: 10px;
     }
-
     .label {
       font-weight: bold;
     }
-
     .shipping-line {
       margin-bottom: 4px;
     }
@@ -56,19 +51,19 @@
       <h5 class="mb-3">Order #{{order.confirmationNumber || 'N/A'}}</h5>
       <p><span class="label">Placed on:</span> {{order.date | date:'fullDate'}} at {{order.date | date:'shortTime'}}</p>
 
-     <div class="mb-3">
-  <p class="label">Shipping Info:</p>
-  <div class="shipping-line"><strong>First Name:</strong> {{order.shippingParsed.firstName || 'N/A'}}</div>
-  <div class="shipping-line"><strong>Last Name:</strong> {{order.shippingParsed.lastName || 'N/A'}}</div>
-  <div class="shipping-line"><strong>Address:</strong> {{order.shippingParsed.address || 'N/A'}}</div>
-  <div class="shipping-line"><strong>City:</strong> {{order.shippingParsed.city || 'N/A'}}</div>
-  <div class="shipping-line"><strong>State:</strong> {{order.shippingParsed.state || 'N/A'}}</div>
-  <div class="shipping-line"><strong>Zip Code:</strong> {{order.shippingParsed.zipCode || 'N/A'}}</div>
-  <div class="shipping-line"><strong>Email:</strong> {{order.shippingParsed.email || 'N/A'}}</div>
-</div>
+      <div class="mb-3">
+        <p class="label">Shipping Info:</p>
+        <div class="shipping-line"><strong>First Name:</strong> {{parseShippingInfo().firstName || 'N/A'}}</div>
+        <div class="shipping-line"><strong>Last Name:</strong> {{parseShippingInfo().lastName || 'N/A'}}</div>
+        <div class="shipping-line"><strong>Address:</strong> {{parseShippingInfo().address || 'N/A'}}</div>
+        <div class="shipping-line"><strong>City:</strong> {{parseShippingInfo().city || 'N/A'}}</div>
+        <div class="shipping-line"><strong>State:</strong> {{parseShippingInfo().state || 'N/A'}}</div>
+        <div class="shipping-line"><strong>Zip Code:</strong> {{parseShippingInfo().zipCode || 'N/A'}}</div>
+        <div class="shipping-line"><strong>Email:</strong> {{parseShippingInfo().email || 'N/A'}}</div>
+      </div>
 
-      <p><span class="label">Carrier:</span> {{order.carrier}}<br>
-        <span class="label">Speed:</span> {{order.speed}}</p>
+      <p><span class="label">Carrier:</span> {{order.carrier || 'N/A'}}<br>
+        <span class="label">Speed:</span> {{order.speed || 'N/A'}}</p>
 
       <hr>
 
@@ -89,10 +84,32 @@
     </div>
   </div>
 
-  
-    <script>
+  <script>
     angular.module('ordersApp', [])
       .controller('OrdersController', ['$scope', function ($scope) {
+        $scope.parseShippingInfo = function() {
+          if (!$scope.order) return {};
+          
+          // If shipping info is in the address field as a string
+          if ($scope.order.address && $scope.order.address.includes('firstName')) {
+            try {
+              // Clean and parse the string
+              const cleanStr = $scope.order.address
+                .replace(/^\(/, '{')
+                .replace(/\)$/, '}')
+                .replace(/"\s*:\s*"/g, '":"')
+                .replace(/"\s*,\s*"/g, '","');
+              return JSON.parse(cleanStr);
+            } catch (e) {
+              console.error('Error parsing shipping info:', e);
+              return {};
+            }
+          }
+          
+          // Return empty object if no shipping info found
+          return {};
+        };
+
         $scope.loadOrder = function () {
           const raw = JSON.parse(localStorage.getItem('currentOrder') || '{}');
           if (!raw || Object.keys(raw).length === 0) {
@@ -100,57 +117,11 @@
             return;
           }
 
-          // Initialize shippingParsed with empty values
-          let shippingParsed = {
-            firstName: '',
-            lastName: '',
-            address: '',
-            city: '',
-            state: '',
-            zipCode: '',
-            email: ''
-          };
-
-          // Check if shipping info is in the address field (your specific case)
-          if (raw.address && raw.address.includes('firstName')) {
-            try {
-              // Clean and parse the address string
-              const cleanString = raw.address
-                .replace(/^\(/, '{')
-                .replace(/\)$/, '}')
-                .replace(/"\s*:\s*"/g, '":"')
-                .replace(/"\s*,\s*"/g, '","');
-              
-              const parsed = JSON.parse(cleanString);
-              shippingParsed = {
-                firstName: parsed.firstName || '',
-                lastName: parsed.lastName || '',
-                address: parsed.address || '',
-                city: parsed.city || '',
-                state: parsed.state || '',
-                zipCode: parsed.zipCode || '',
-                email: parsed.email || ''
-              };
-            } catch (e) {
-              console.error('Error parsing shipping info:', e);
-            }
-          }
-          // If normal shipping info exists
-          else if (raw.shipping) {
-            try {
-              shippingParsed = typeof raw.shipping === 'string' 
-                ? JSON.parse(raw.shipping) 
-                : raw.shipping;
-            } catch (e) {
-              console.error('Error parsing shipping info:', e);
-            }
-          }
-
           $scope.order = {
             confirmationNumber: raw.confirmation || 'SCV-' + Date.now(),
             date: new Date(raw.date || Date.now()),
             total: raw.total || 0,
-            shippingParsed: shippingParsed,
+            address: raw.address || '', // Keep original address field
             carrier: raw.carrier || 'Standard',
             speed: raw.speed || 'Normal',
             items: (raw.items || raw.cartItems || []).map(item => ({
@@ -166,6 +137,4 @@
       }]);
   </script>
 </body>
-
 </html>
-
