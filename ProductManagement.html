@@ -116,68 +116,70 @@
       }
 
       document.addEventListener("DOMContentLoaded", function () {
-         loadProductsFromLocalStorage();
-         renderProducts();
+  loadProductsFromLocalStorage();
+  renderProducts();
 
-         document.getElementById("productForm").addEventListener("submit", function (event) {
-            event.preventDefault();
+  // Handle product form submission
+  document.getElementById("productForm").addEventListener("submit", function (event) {
+    event.preventDefault();
 
-            const index = document.getElementById("productIndex").value;
-            const updatedProduct = {
-               name: document.getElementById("productId").value.trim(),
-               desc: document.getElementById("productDesc").value.trim(),
-               category: document.getElementById("productCategory").value.trim(),
-               unit: document.getElementById("productUnit").value.trim(),
-               price: document.getElementById("productPrice").value.trim(),
-               image: document.getElementById("productImage").value.trim() || "https://via.placeholder.com/150"
-            };
+    const index = document.getElementById("productIndex").value;
+    const updatedProduct = {
+      name: document.getElementById("productId").value.trim(),
+      desc: document.getElementById("productDesc").value.trim(),
+      category: document.getElementById("productCategory").value.trim(),
+      unit: document.getElementById("productUnit").value.trim(),
+      price: document.getElementById("productPrice").value.trim(),
+      image: document.getElementById("productImage").value.trim() || "https://via.placeholder.com/150"
+    };
 
-            if (!updatedProduct.name || !updatedProduct.desc || !updatedProduct.category || !updatedProduct.unit || !updatedProduct.price) {
-               alert("Please fill out all required fields.");
-               return;
-            }
+    if (!updatedProduct.name || !updatedProduct.desc || !updatedProduct.category || !updatedProduct.unit || !updatedProduct.price) {
+      alert("Please fill out all required fields.");
+      return;
+    }
 
-            if (index !== "") {
-               products[index] = updatedProduct;
-            } else {
-               products.push(updatedProduct);
-            }
+    if (index !== "") {
+      products[index] = updatedProduct;
+    } else {
+      products.push(updatedProduct);
+    }
 
-            saveProductsToLocalStorage();
-            renderProducts();
-            document.getElementById("productForm").reset();
-         });
+    saveProductsToLocalStorage();
+    renderProducts();
+    document.getElementById("productForm").reset();
+  });
 
-         document.getElementById("submitOrderBtn").addEventListener("click", function () {
-            if (!products || products.length === 0) {
-               alert("🛒 Your cart is empty!");
-               return;
-            }
+  // Handle Submit Order button
+  document.getElementById("submitOrderBtn").addEventListener("click", function () {
+    if (!products || products.length === 0) {
+      alert(" Your cart is empty!");
+      return;
+    }
 
-            let xhr = new XMLHttpRequest();
-            xhr.open("POST", "https://example.com/submitOrder");
-            xhr.setRequestHeader("Content-Type", "application/json");
+    let xhr = new XMLHttpRequest();
+    xhr.open("POST", "https://webhook.site/YOUR-REAL-URL-HERE");
+    xhr.setRequestHeader("Content-Type", "application/json");
 
-            xhr.addEventListener("load", function () {
-               alert("✅ Server responded with status: " + xhr.status);
+    xhr.addEventListener("load", function () {
+      alert(" Server responded with status: " + xhr.status);
 
-               if (xhr.status === 200 || xhr.status === 201) {
-                  alert("✅ Order submitted!");
-                  localStorage.removeItem("products");
-                  products = [];
-                  renderProducts();
-               } else {
-                  alert("❌ Server error: " + xhr.status);
-               }
-            });
+      if (xhr.status === 200 || xhr.status === 201) {
+        alert(" Order submitted!");
+        localStorage.removeItem("products");
+        products = [];
+        renderProducts();
+      } else {
+        alert(" Server error: " + xhr.status);
+      }
+    });
 
-            xhr.addEventListener("error", function () {
-               alert("❌ Network error during submission.");
-            });
+    xhr.addEventListener("error", function () {
+      alert(" Network error during submission.");
+    });
 
-            xhr.send(JSON.stringify({ cart: products }));
-         });
-      });
+    xhr.send(JSON.stringify({ cart: products }));
+  });
+});
 
       function searchProducts() {
          let query = document.getElementById("searchBar").value.toLowerCase();
