@@ -39,7 +39,7 @@
       </form>
 
       <h3 class="mt-5">Products (Stored Locally)</h3>
-      <div id="productGrid" class="row row-cols-3 g-4"></div>
+      <div id="productGrid" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4"></div>
 
       <h3 class="mt-5">Products (via AJAX)</h3>
       <button class="btn btn-primary mb-3" ng-click="loadProducts()">Load from JSON</button>
@@ -52,7 +52,7 @@
                <p><strong>Notes:</strong> {{ product.category }}</p>
                <p><strong>Type:</strong> {{ product.desc }}</p>
                <p><strong>Size:</strong> {{ product.unit }}</p>
-               <p><strong>Price:</strong> {{ product.price }}</p>
+               <p><strong>Price:</strong> ${{ product.price }}</p>
             </div>
          </div>
       </div>
@@ -86,7 +86,7 @@
                   <p><strong>Notes:</strong> ${product.category}</p>
                   <p><strong>Type:</strong> ${product.desc}</p>
                   <p><strong>Size:</strong> ${product.unit}</p>
-                  <p><strong>Price:</strong> ${product.price}</p>
+                  <p><strong>Price:</strong> $${product.price}</p>
                   <button class="btn btn-warning" onclick="editProduct(${index})">Edit</button>
                   <button class="btn btn-danger" onclick="deleteProduct(${index})">Delete</button>
                </div>
@@ -161,23 +161,22 @@
       }
    </script>
 
-  <script>
-   angular.module('productApp', [])
-      .controller('ProductController', function ($scope, $http) {
-         $scope.products = [];
-         $scope.error = "";
+   <script>
+      angular.module('productApp', [])
+         .controller('ProductController', function ($scope, $http) {
+            $scope.products = [];
+            $scope.error = "";
 
-         $scope.loadProducts = function () {
-            $http.get('completeOrderData.json?v=' + new Date().getTime())
-               .then(function (response) {
-                  $scope.products = response.data.cart || [];
-               }, function () {
-                  $scope.error = "Failed to load product data.";
-               });
-         };
-      });
-</script>
-
+            $scope.loadProducts = function () {
+               $http.get('completeOrderData.json?v=' + new Date().getTime())
+                  .then(function (response) {
+                     $scope.products = response.data.cart || [];
+                  }, function () {
+                     $scope.error = "Failed to load product data.";
+                  });
+            };
+         });
+   </script>
 </body>
 
 </html>
