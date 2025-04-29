@@ -148,24 +148,36 @@
             document.getElementById("productForm").reset();
          });
 
-         document.getElementById("submitOrderBtn").addEventListener("click", function () {
-            let xhr = new XMLHttpRequest();
-            xhr.open("POST", "https://webhook.site/05f1a137-ba23-4d20-a68f-84ab83684b58"); // Replace with real endpoint
-            xhr.setRequestHeader("Content-Type", "application/json");
+      document.getElementById("submitOrderBtn").addEventListener("click", function () {
+   if (!products || products.length === 0) {
+      alert("🛒 Your cart is empty!");
+      return;
+   }
 
-            xhr.addEventListener("load", function () {
-               if (xhr.status === 200) {
-                  alert("✅ Order submitted successfully!");
-                  localStorage.removeItem("products"); // Clear the cart
-                  renderProducts(); // Re-render product list
-               } else {
-                  alert("❌ Order submission failed. Please try again.");
-               }
-            });
+   let xhr = new XMLHttpRequest();
+   xhr.open("POST", "https://webhook.site/05f1a137-ba23-4d20-a68f-84ab83684b58"); // Use your live webhook URL
+   xhr.setRequestHeader("Content-Type", "application/json");
 
-            xhr.send(JSON.stringify({ cart: products }));
-         });
-      });
+   xhr.addEventListener("load", function () {
+      alert("✅ Server responded with status " + xhr.status);
+
+      if (xhr.status === 200 || xhr.status === 201) {
+         alert("✅ Order submitted!");
+         localStorage.removeItem("products");
+         products = [];
+         renderProducts();
+      } else {
+         alert("❌ Server error: " + xhr.status);
+      }
+   });
+
+   xhr.addEventListener("error", function () {
+      alert("❌ Network error during submission.");
+   });
+
+   xhr.send(JSON.stringify({ cart: products }));
+});
+
 
       function searchProducts() {
          let query = document.getElementById("searchBar").value.toLowerCase();
