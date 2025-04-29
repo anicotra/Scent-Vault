@@ -41,6 +41,8 @@
       <h3 class="mt-5">Products (Stored Locally)</h3>
       <div id="productGrid" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4"></div>
 
+      <button id="submitOrderBtn" class="btn btn-primary mt-4">Submit Order</button>
+
       <h3 class="mt-5">Products (via AJAX)</h3>
       <button class="btn btn-primary mb-3" ng-click="loadProducts()">Load from JSON</button>
       <div class="alert alert-danger" ng-if="error">{{ error }}</div>
@@ -144,6 +146,24 @@
             saveProductsToLocalStorage();
             renderProducts();
             document.getElementById("productForm").reset();
+         });
+
+         document.getElementById("submitOrderBtn").addEventListener("click", function () {
+            let xhr = new XMLHttpRequest();
+            xhr.open("POST", "https://example.com/submitOrder"); // Replace with real endpoint
+            xhr.setRequestHeader("Content-Type", "application/json");
+
+            xhr.addEventListener("load", function () {
+               if (xhr.status === 200) {
+                  alert("✅ Order submitted successfully!");
+                  localStorage.removeItem("products"); // Clear the cart
+                  renderProducts(); // Re-render product list
+               } else {
+                  alert("❌ Order submission failed. Please try again.");
+               }
+            });
+
+            xhr.send(JSON.stringify({ cart: products }));
          });
       });
 
