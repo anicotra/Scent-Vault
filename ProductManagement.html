@@ -41,8 +41,7 @@
       <h3 class="mt-5">Products (Stored Locally)</h3>
       <div id="productGrid" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4"></div>
 
-<button id="submitOrderBtn" type="button" class="btn btn-primary mt-4">Submit Order</button>
-
+      <button id="submitOrderBtn" type="button" class="btn btn-primary mt-4">Submit Order</button>
 
       <h3 class="mt-5">Products (via AJAX)</h3>
       <button class="btn btn-primary mb-3" ng-click="loadProducts()">Load from JSON</button>
@@ -149,36 +148,36 @@
             document.getElementById("productForm").reset();
          });
 
-      document.getElementById("submitOrderBtn").addEventListener("click", function () {
-   if (!products || products.length === 0) {
-      alert(" Your cart is empty!");
-      return;
-   }}
+         document.getElementById("submitOrderBtn").addEventListener("click", function () {
+            if (!products || products.length === 0) {
+               alert("🛒 Your cart is empty!");
+               return;
+            }
 
-   let xhr = new XMLHttpRequest();
-   xhr.open("POST", "https://example.com/submitOrder"); // Would eventually use real URL
-   xhr.setRequestHeader("Content-Type", "application/json");
+            let xhr = new XMLHttpRequest();
+            xhr.open("POST", "https://example.com/submitOrder");
+            xhr.setRequestHeader("Content-Type", "application/json");
 
-   xhr.addEventListener("load", function () {
-      alert("Server responded with status " + xhr.status);
+            xhr.addEventListener("load", function () {
+               alert("✅ Server responded with status: " + xhr.status);
 
-      if (xhr.status === 200 || xhr.status === 201) {
-         alert(" Order submitted!");
-         localStorage.removeItem("products");
-         products = [];
-         renderProducts();
-      } else {
-         alert(" Server error: " + xhr.status);
-      }
-   });
+               if (xhr.status === 200 || xhr.status === 201) {
+                  alert("✅ Order submitted!");
+                  localStorage.removeItem("products");
+                  products = [];
+                  renderProducts();
+               } else {
+                  alert("❌ Server error: " + xhr.status);
+               }
+            });
 
-   xhr.addEventListener("error", function () {
-      alert(" Network error during submission.");
-   });
+            xhr.addEventListener("error", function () {
+               alert("❌ Network error during submission.");
+            });
 
-   xhr.send(JSON.stringify({ cart: products }));
-});
-
+            xhr.send(JSON.stringify({ cart: products }));
+         });
+      });
 
       function searchProducts() {
          let query = document.getElementById("searchBar").value.toLowerCase();
@@ -213,4 +212,3 @@
 </body>
 
 </html>
-
