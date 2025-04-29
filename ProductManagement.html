@@ -161,22 +161,23 @@
       }
    </script>
 
-   <script>
-      angular.module('productApp', [])
-         .controller('ProductController', function ($scope, $http) {
-            $scope.products = [];
-            $scope.error = "";
+  <script>
+   angular.module('productApp', [])
+      .controller('ProductController', function ($scope, $http) {
+         $scope.products = [];
+         $scope.error = "";
 
-            $scope.loadProducts = function () {
-               $http.get('completeOrderData.json')
-                  .then(function (response) {
-                     $scope.products = response.data.cart || [];
-                  }, function () {
-                     $scope.error = "Failed to load product data.";
-                  });
-            };
-         });
-   </script>
+         $scope.loadProducts = function () {
+            $http.get('completeOrderData.json?v=' + new Date().getTime())
+               .then(function (response) {
+                  $scope.products = response.data.cart || [];
+               }, function () {
+                  $scope.error = "Failed to load product data.";
+               });
+         };
+      });
+</script>
+
 </body>
 
 </html>
