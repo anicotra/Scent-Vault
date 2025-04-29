@@ -43,6 +43,7 @@
 
 <button id="submitOrderBtn" type="button" class="btn btn-primary mt-4">Submit Order</button>
 
+
       <h3 class="mt-5">Products (via AJAX)</h3>
       <button class="btn btn-primary mb-3" ng-click="loadProducts()">Load from JSON</button>
       <div class="alert alert-danger" ng-if="error">{{ error }}</div>
@@ -150,29 +151,29 @@
 
       document.getElementById("submitOrderBtn").addEventListener("click", function () {
    if (!products || products.length === 0) {
-      alert("🛒 Your cart is empty!");
+      alert(" Your cart is empty!");
       return;
    }
 
    let xhr = new XMLHttpRequest();
-   xhr.open("POST", "https://webhook.site/05f1a137-ba23-4d20-a68f-84ab83684b58"); // Use your live webhook URL
+   xhr.open("POST", "https://webhook.site/cea80ddc-5ab2-4532-8400-be72a59ead0b"); // Use your live webhook URL
    xhr.setRequestHeader("Content-Type", "application/json");
 
    xhr.addEventListener("load", function () {
-      alert("✅ Server responded with status " + xhr.status);
+      alert("Server responded with status " + xhr.status);
 
       if (xhr.status === 200 || xhr.status === 201) {
-         alert("✅ Order submitted!");
+         alert(" Order submitted!");
          localStorage.removeItem("products");
          products = [];
          renderProducts();
       } else {
-         alert("❌ Server error: " + xhr.status);
+         alert(" Server error: " + xhr.status);
       }
    });
 
    xhr.addEventListener("error", function () {
-      alert("❌ Network error during submission.");
+      alert(" Network error during submission.");
    });
 
    xhr.send(JSON.stringify({ cart: products }));
