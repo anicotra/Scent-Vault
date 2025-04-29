@@ -29,7 +29,7 @@
       "name": "Bleu de Chanel",
       "price": 125.00,
       "quantity": 1,
-      "image": "https://www.chanel.com/images//t_one/t_fragrance//q_auto:good,f_auto,fl_lossy,dpr_1.1/w_1920/bleu-de-chanel-parfum-spray-3-4fl-oz--packshot-default-107180-9564892200990.jpg",
+      "image": "https://www.sephora.com/productimages/sku/s1467883-main-zoom.jpg",
       "category": "Woody Aromatic",
       "desc": "Elegant and masculine",
       "unit": "100"
@@ -39,9 +39,59 @@
       "name": "YSL Y Eau de Parfum",
       "price": 89.98,
       "quantity": 1,
-      "image": "https://www.yslbeautyus.com/dw/image/v2/AANG_PRD/on/demandware.static/-/Sites-ysl-master-catalog/default/dw7e1a6ec4/Fragrance/727YSL/727YSL/3614272050358.jpg",
+      "image": "https://www.yslbeautyus.com/dw/image/v2/BBXC_PRD/on/demandware.static/-/Sites-ysl-master-catalog/default/dw4d2df8f6/Fragrance/3614272648418_2.jpg",
       "category": "Fresh Spicy",
       "desc": "Bold and fresh",
+      "unit": "100"
+    },
+    {
+      "productId": "prod-003",
+      "name": "Dior Sauvage",
+      "price": 110.00,
+      "quantity": 1,
+      "image": "https://www.sephora.com/productimages/sku/s1702184-main-zoom.jpg",
+      "category": "Aromatic Fougere",
+      "desc": "Fresh, spicy and woody",
+      "unit": "100"
+    },
+    {
+      "productId": "prod-004",
+      "name": "Acqua di Gio",
+      "price": 95.00,
+      "quantity": 1,
+      "image": "https://www.sephora.com/productimages/sku/s1931763-main-zoom.jpg",
+      "category": "Aquatic Citrus",
+      "desc": "Marine freshness with citrus",
+      "unit": "100"
+    },
+    {
+      "productId": "prod-005",
+      "name": "Tom Ford Noir Extreme",
+      "price": 135.00,
+      "quantity": 1,
+      "image": "https://www.sephora.com/productimages/sku/s1703182-main-zoom.jpg",
+      "category": "Amber Woody",
+      "desc": "Warm, spicy and sophisticated",
+      "unit": "100"
+    },
+    {
+      "productId": "prod-006",
+      "name": "Versace Eros",
+      "price": 85.00,
+      "quantity": 1,
+      "image": "https://www.sephora.com/productimages/sku/s1591079-main-zoom.jpg",
+      "category": "Fresh Oriental",
+      "desc": "Mint, green apple, and tonka bean",
+      "unit": "100"
+    },
+    {
+      "productId": "prod-007",
+      "name": "Paco Rabanne 1 Million",
+      "price": 88.00,
+      "quantity": 1,
+      "image": "https://www.sephora.com/productimages/sku/s1292224-main-zoom.jpg",
+      "category": "Spicy Leather",
+      "desc": "Bold and sensual",
       "unit": "100"
     }
   ]
