@@ -150,11 +150,11 @@
   });
 
   // Handle Submit Order button
-//  document.getElementById("submitOrderBtn").addEventListener("click", function () {
-//    if (!products || products.length === 0) {
-//      alert(" Your cart is empty!");
-//      return;
-//    }
+  document.getElementById("submitOrderBtn").addEventListener("click", function () {
+   if (!products || products.length === 0) {
+      alert(" Your cart is empty!");
+      return;
+    }
 
     let xhr = new XMLHttpRequest();
     xhr.open("POST", "https://example.com/submitOrder");
