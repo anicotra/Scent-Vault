@@ -55,7 +55,7 @@
          <input type="text" id="searchBar" class="form-control" placeholder="Search products..." onkeyup="searchProducts()" style="position: absolute; top: 20px; right: 20px; width: 250px; max-width: 100%;">
          <h2>Our Products:</h2>
          <div class="container">
-            <div id="productGrid" class="row row-cols-3 g-4">
+            <div id="productGrid" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
                <!-- Products will be inserted here by JavaScript -->
             </div>
          </div>
@@ -411,6 +411,34 @@
          margin-left: 220px;
          width: calc(100% - 220px);
          padding: 20px;
+      }
+      @media (max-width: 768px) {
+         body {
+            flex-direction: column;
+         }
+         .sidebar {
+            width: 100%;
+            height: auto;
+            position: relative;
+            border-right: none;
+            border-bottom: 2px solid #a5a5a5;
+         }
+         .content {
+            margin-left: 0;
+            width: 100%;
+         }
+         #searchBar {
+            position: static !important;
+            width: 100% !important;
+            margin-bottom: 15px;
+         }
+         .cart-icon {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 35px;
+            height: 35px;
+         }
       }
    </style>
 </body>
